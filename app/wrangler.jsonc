@@ -15,7 +15,8 @@
   "vars": {
     "ATTENDANCE_API_URL": "https://attendance-backend-o4yu.onrender.com"
   }
-  // Secrets (SUPABASE_SERVICE_ROLE_KEY, ATTENDANCE_SERVICE_USERNAME,
-  // ATTENDANCE_SERVICE_PASSWORD) must NOT go here — set them with
-  // `wrangler secret put <NAME>` instead, they never touch this file.
+  // Secrets must NOT go here — set with `wrangler secret put <NAME>` instead.
+  // This Worker only needs: SUPABASE_SERVICE_ROLE_KEY
+  // (ATTENDANCE_SERVICE_USERNAME / ATTENDANCE_SERVICE_PASSWORD belong to the
+  // separate Supabase Edge Function sync-roster, not this Worker.)
 }
