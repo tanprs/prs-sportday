@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "prs-sportday",
+  "compatibility_date": "2026-06-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "ATTENDANCE_API_URL": "https://attendance-backend-o4yu.onrender.com"
+  }
+  // Secrets (SUPABASE_SERVICE_ROLE_KEY, ATTENDANCE_SERVICE_USERNAME,
+  // ATTENDANCE_SERVICE_PASSWORD) must NOT go here — set them with
+  // `wrangler secret put <NAME>` instead, they never touch this file.
+}
