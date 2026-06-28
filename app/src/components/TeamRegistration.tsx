@@ -9,8 +9,10 @@ import { QRScanner } from "@/components/QRScanner";
 // payload คือ "STD_<รหัสนักเรียน>") กัปตันชนิดกีฬา/หัวหน้าสี/ครูเลือกชนิด
 // กีฬาก่อน ระบบหาทีมของสีตัวเองสำหรับกีฬานั้น (สร้างให้อัตโนมัติถ้ายังไม่มี)
 // แล้วค่อยสแกนเพิ่มสมาชิกทีละคน กฎทั้งหมด (โควตา/เพศ/ชั้น/สีตรงกัน) ถูกบังคับ
-// โดย trigger ในฐานข้อมูลอยู่แล้ว (ดู 0003_business_rules.sql) — UI นี้แค่ยิง
-// insert แล้วโชว์ข้อความ error ภาษาไทยที่ trigger ส่งกลับมาตรง ๆ
+// โดย trigger ในฐานข้อมูลอยู่แล้ว (ดู 0003_business_rules.sql) เป็นชั้นป้องกัน
+// สุดท้ายเสมอ — แต่ UI นี้ตรวจกฎเดียวกัน (สี/ชั้น/เพศ/โควตา) ซ้ำฝั่ง client
+// ก่อน insert ด้วย แล้วโชว์เป็นป๊อปอัพให้กดยืนยันทีละคน เพื่อให้เห็นเหตุผล
+// ที่ไม่ผ่านได้ทันทีโดยไม่ต้องรอ round-trip ไปฐานข้อมูล และกันสแกนผิดคน/ผิดทีม
 
 type SportRow = {
   id: string;
@@ -19,6 +21,25 @@ type SportRow = {
   grade_group: string;
   gender_type: string;
   team_size: number | null;
+  sub_grade_quota: Record<string, number> | null;
+};
+
+type StudentRow = {
+  id: string;
+  student_code: string;
+  full_name: string;
+  classroom: string;
+  grade_level: string;
+  house_color: string | null;
+  gender: string;
+};
+
+type CheckItem = { key: string; label: string; ok: boolean };
+
+type PendingScan = {
+  student: StudentRow;
+  checks: CheckItem[];
+  allOk: boolean;
 };
 
 type RosterRow = {
@@ -43,6 +64,22 @@ const GENDER_LABELS_TH: Record<string, string> = {
 };
 
 const HOUSE_OPTIONS = ["red", "yellow", "green", "blue"] as const;
+
+// mirror ของฟังก์ชัน grade_in_group() ใน 0003_business_rules.sql ทุกตัวอักษร —
+// ถ้าแก้กฎที่ฝั่ง DB ต้องแก้ตรงนี้ให้ตรงกันด้วย ไม่งั้นป๊อปอัพกับ trigger จะขัดกัน
+const GRADE_GROUP_SETS: Record<string, string[]> = {
+  "ม.1-2": ["ม.1", "ม.2"],
+  "ม.3-4": ["ม.3", "ม.4"],
+  "ม.5-6": ["ม.5", "ม.6"],
+  "ม.ต้น": ["ม.1", "ม.2", "ม.3"],
+  "ม.ปลาย": ["ม.4", "ม.5", "ม.6"],
+  "รวม": ["ม.1", "ม.2", "ม.3", "ม.4", "ม.5", "ม.6"],
+};
+
+function gradeInGroup(grade: string, group: string): boolean {
+  const set = GRADE_GROUP_SETS[group];
+  return set ? set.includes(grade) : grade === group;
+}
 
 function genLogId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -81,6 +118,9 @@ export function TeamRegistration({
   const [scanning, setScanning] = useState(false);
   const [scanLog, setScanLog] = useState<{ id: string; ok: boolean; text: string }[]>([]);
   const pendingCodes = useRef<Set<string>>(new Set());
+
+  const [pendingScan, setPendingScan] = useState<PendingScan | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   function pushLog(ok: boolean, text: string) {
     setScanLog((prev) => [{ id: genLogId(), ok, text }, ...prev].slice(0, 30));
@@ -181,8 +221,61 @@ export function TeamRegistration({
     setRoster([]);
   }
 
+  // ตรวจกฎเดียวกับ check_team_quota() ใน 0003_business_rules.sql ฝั่ง client
+  // ก่อนยิง insert จริง — ใช้ทั้งตัดสินใจว่าปุ่ม "ยืนยัน" กดได้ไหม และโชว์เหตุผล
+  // ให้คนสแกนเห็นในป๊อปอัพทันที ไม่ต้องรอ error จาก DB
+  function buildPendingScan(student: StudentRow): PendingScan {
+    const checks: CheckItem[] = [];
+
+    checks.push({
+      key: "color",
+      label: `สีตรงกับทีม (ทีมนี้: ${(HOUSE_LABELS_TH[house] ?? house) || "-"})`,
+      ok: student.house_color === house,
+    });
+
+    if (selectedSport) {
+      checks.push({
+        key: "grade",
+        label: `ชั้นอยู่ในรุ่นที่แข่ง (${selectedSport.grade_group})`,
+        ok: gradeInGroup(student.grade_level, selectedSport.grade_group),
+      });
+
+      if (selectedSport.gender_type !== "both") {
+        const wantGender = selectedSport.gender_type === "male" ? "M" : "F";
+        checks.push({
+          key: "gender",
+          label: `เพศตรงกับรุ่นแข่งขัน (${GENDER_LABELS_TH[selectedSport.gender_type]})`,
+          ok: student.gender === wantGender,
+        });
+      }
+
+      const mainCount = roster.filter((r) => r.role === "main").length;
+      if (selectedSport.team_size != null) {
+        checks.push({
+          key: "teamSize",
+          label: `ทีมยังไม่เต็มจำนวนตัวจริง (${mainCount}/${selectedSport.team_size} คน)`,
+          ok: mainCount < selectedSport.team_size,
+        });
+      }
+
+      const quota = selectedSport.sub_grade_quota?.[student.grade_level];
+      if (quota != null) {
+        const gradeCount = roster.filter(
+          (r) => r.role === "main" && r.classroom.split("/")[0] === student.grade_level
+        ).length;
+        checks.push({
+          key: "quota",
+          label: `โควตาชั้น ${student.grade_level} ในทีมนี้ (${gradeCount}/${quota} คน)`,
+          ok: gradeCount < quota,
+        });
+      }
+    }
+
+    return { student, checks, allOk: checks.every((c) => c.ok) };
+  }
+
   async function handleScan(text: string) {
-    if (!team) return;
+    if (!team || pendingScan) return; // มีป๊อปอัพค้างอยู่ — กันสแกนทับ
     if (!text.startsWith("STD_")) {
       pushLog(false, `QR นี้ไม่ใช่บัตรนักเรียน (${text.slice(0, 20)})`);
       return;
@@ -199,7 +292,7 @@ export function TeamRegistration({
     try {
       const { data: student, error: lookupError } = await supabase
         .from("students")
-        .select("id, student_code, full_name, classroom")
+        .select("id, student_code, full_name, classroom, grade_level, house_color, gender")
         .eq("student_code", code)
         .single();
 
@@ -208,32 +301,51 @@ export function TeamRegistration({
         return;
       }
 
-      const { error: insertError } = await supabase
-        .from("team_members")
-        .insert({ team_id: team.id, student_id: student.id, role: "main", added_by: currentUserId });
-
-      if (insertError) {
-        pushLog(false, `${student.full_name}: ${insertError.message}`);
-        return;
-      }
-
-      setRoster((prev) => [
-        ...prev,
-        {
-          id: `temp-${student.id}`,
-          role: "main",
-          student_id: student.id,
-          student_code: student.student_code,
-          full_name: student.full_name,
-          classroom: student.classroom,
-        },
-      ]);
-      pushLog(true, `เพิ่ม ${student.full_name} (${student.classroom}) เข้าทีมแล้ว`);
-      // sync ค่า id จริงจาก DB เผื่อต้องลบทีหลัง (temp- ใช้ลบไม่ได้)
-      loadRoster(team.id);
+      setPendingScan(buildPendingScan(student as StudentRow));
     } finally {
       pendingCodes.current.delete(code);
     }
+  }
+
+  async function handleConfirmScan() {
+    if (!pendingScan || !team || !pendingScan.allOk) return;
+    const student = pendingScan.student;
+    setConfirming(true);
+
+    const { error: insertError } = await supabase
+      .from("team_members")
+      .insert({ team_id: team.id, student_id: student.id, role: "main", added_by: currentUserId });
+
+    setConfirming(false);
+
+    if (insertError) {
+      pushLog(false, `${student.full_name}: ${insertError.message}`);
+      setPendingScan(null);
+      return;
+    }
+
+    setRoster((prev) => [
+      ...prev,
+      {
+        id: `temp-${student.id}`,
+        role: "main",
+        student_id: student.id,
+        student_code: student.student_code,
+        full_name: student.full_name,
+        classroom: student.classroom,
+      },
+    ]);
+    pushLog(true, `เพิ่ม ${student.full_name} (${student.classroom}) เข้าทีมแล้ว`);
+    // sync ค่า id จริงจาก DB เผื่อต้องลบทีหลัง (temp- ใช้ลบไม่ได้)
+    loadRoster(team.id);
+    setPendingScan(null);
+  }
+
+  function handleCancelScan() {
+    if (pendingScan) {
+      pushLog(false, `ยกเลิกการเพิ่ม ${pendingScan.student.full_name}`);
+    }
+    setPendingScan(null);
   }
 
   async function handleRemove(memberId: string) {
@@ -443,6 +555,51 @@ export function TeamRegistration({
               {submitting ? "กำลังส่ง..." : "ส่งทีม (ปิดรับสมาชิกเพิ่ม)"}
             </button>
           )}
+        </div>
+      )}
+
+      {pendingScan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
+            <p className="text-sm text-slate-500">ยืนยันเพิ่มเข้าทีม</p>
+            <p className="mt-1 text-lg font-semibold text-slate-900">{pendingScan.student.full_name}</p>
+            <p className="text-sm text-slate-500">
+              {pendingScan.student.student_code} · {pendingScan.student.classroom} ·{" "}
+              {HOUSE_LABELS_TH[pendingScan.student.house_color ?? ""] ?? pendingScan.student.house_color ?? "ไม่มีสี"}
+            </p>
+
+            <ul className="mt-3 space-y-1 text-sm">
+              {pendingScan.checks.map((c) => (
+                <li key={c.key} className={c.ok ? "text-emerald-700" : "text-red-600"}>
+                  {c.ok ? "✓" : "✕"} {c.label}
+                </li>
+              ))}
+            </ul>
+
+            {!pendingScan.allOk && (
+              <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+                มีรายการไม่ผ่านการตรวจสอบด้านบน — เพิ่มเข้าทีมนี้ไม่ได้
+              </p>
+            )}
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleCancelScan}
+                className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmScan}
+                disabled={!pendingScan.allOk || confirming}
+                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+              >
+                {confirming ? "กำลังเพิ่ม..." : "ยืนยันเพิ่มเข้าทีม"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

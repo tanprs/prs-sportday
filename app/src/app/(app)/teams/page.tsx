@@ -24,7 +24,7 @@ export default async function TeamsPage() {
 
   const { data: sports } = await supabase
     .from("sport_types")
-    .select("id, name, category, grade_group, gender_type, team_size, is_active, sort_order");
+    .select("id, name, category, grade_group, gender_type, team_size, sub_grade_quota, is_active, sort_order");
 
   const sportName = new Map((sports ?? []).map((s) => [s.id, s.name]));
 
@@ -40,6 +40,7 @@ export default async function TeamsPage() {
       grade_group: s.grade_group,
       gender_type: s.gender_type,
       team_size: s.team_size,
+      sub_grade_quota: s.sub_grade_quota as Record<string, number> | null,
     }));
 
   return (
