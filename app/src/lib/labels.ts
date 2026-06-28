@@ -18,3 +18,12 @@ export const HOUSE_LABELS_TH: Record<string, string> = {
   green: "สีเขียว",
   blue: "สีน้ำเงิน",
 };
+
+// gender_type ของ sport_types — หลายชนิดกีฬามีชื่อซ้ำกันระหว่างชาย/หญิง
+// (เช่น "ฟุตซอล" ชาย กับ "ฟุตซอล" หญิง เป็นคนละแถวกัน) ป้ายนี้ใช้ทั้งใน
+// ตัวเลือกประเภทตอนลงทะเบียนทีม และตอนแสดงรายชื่อทีมให้แยกออกจากกันได้
+export const GENDER_TYPE_LABELS_TH: Record<string, string> = {
+  male: "ชาย",
+  female: "หญิง",
+  both: "รวม",
+};

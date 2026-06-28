@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { HOUSE_LABELS_TH, getCurrentProfile } from "@/lib/auth";
+import { GENDER_TYPE_LABELS_TH } from "@/lib/labels";
 import { TeamRegistration } from "@/components/TeamRegistration";
 
 const STATUS_LABELS_TH: Record<string, string> = {
@@ -27,6 +28,9 @@ export default async function TeamsPage() {
     .select("id, name, category, grade_group, gender_type, team_size, sub_grade_quota, is_active, sort_order");
 
   const sportName = new Map((sports ?? []).map((s) => [s.id, s.name]));
+  // gender_type ของแต่ละกีฬา ใช้โชว์คอลัมน์ "ประเภท" ในตาราง เพราะชื่อกีฬา
+  // ซ้ำกันได้ระหว่างชาย/หญิง (ดูคอมเมนต์ GENDER_TYPE_LABELS_TH ใน lib/labels.ts)
+  const sportGender = new Map((sports ?? []).map((s) => [s.id, s.gender_type]));
 
   // ส่งรายชื่อกีฬาที่ active (เรียงตาม sort_order) ลงไปให้ TeamRegistration ใช้ได้
   // ตั้งแต่ render แรก — ไม่ต้องให้ client component ไป fetch เองตอน mount
@@ -68,6 +72,7 @@ export default async function TeamsPage() {
           <thead className="bg-slate-50 text-left text-slate-500">
             <tr>
               <th className="px-4 py-2">ชนิดกีฬา</th>
+              <th className="px-4 py-2">ประเภท</th>
               <th className="px-4 py-2">สี</th>
               <th className="px-4 py-2">ชื่อทีม</th>
               <th className="px-4 py-2">สถานะ</th>
@@ -79,6 +84,12 @@ export default async function TeamsPage() {
                 <tr key={team.id} className="border-t border-slate-100">
                   <td className="px-4 py-2">
                     {sportName.get(team.sport_id) ?? "-"}
+                  </td>
+                  <td className="px-4 py-2">
+                    {(() => {
+                      const g = sportGender.get(team.sport_id);
+                      return g ? GENDER_TYPE_LABELS_TH[g] ?? g : "-";
+                    })()}
                   </td>
                   <td className="px-4 py-2">
                     {team.house_color
@@ -93,7 +104,7 @@ export default async function TeamsPage() {
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-slate-400">
+                <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
                   ยังไม่มีทีมในระบบ
                 </td>
               </tr>

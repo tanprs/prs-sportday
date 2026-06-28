@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { HOUSE_LABELS_TH } from "@/lib/labels";
+import { HOUSE_LABELS_TH, GENDER_TYPE_LABELS_TH } from "@/lib/labels";
 import { QRScanner } from "@/components/QRScanner";
 
 // ลงทะเบียนนักเรียนเข้าทีมด้วยการสแกน QR (บัตร/QR เดิมจากระบบเช็คชื่อ —
@@ -57,13 +57,10 @@ type TeamRow = {
   status: string | null;
 };
 
-const GENDER_LABELS_TH: Record<string, string> = {
-  both: "ชาย/หญิง",
-  male: "ชาย",
-  female: "หญิง",
-};
-
 const HOUSE_OPTIONS = ["red", "yellow", "green", "blue"] as const;
+
+// ลำดับที่อยากให้ตัวเลือกประเภทแสดง — ชาย/หญิง ก่อน แล้วค่อยรวม (ถ้ามี)
+const GENDER_TYPE_ORDER = ["male", "female", "both"] as const;
 
 // mirror ของฟังก์ชัน grade_in_group() ใน 0003_business_rules.sql ทุกตัวอักษร —
 // ถ้าแก้กฎที่ฝั่ง DB ต้องแก้ตรงนี้ให้ตรงกันด้วย ไม่งั้นป๊อปอัพกับ trigger จะขัดกัน
@@ -104,6 +101,7 @@ export function TeamRegistration({
   const sports = initialSports;
   const [house, setHouse] = useState<string>(houseColor ?? "");
   const [gradeGroup, setGradeGroup] = useState<string>("");
+  const [genderType, setGenderType] = useState<string>("");
   const [sportId, setSportId] = useState<string>("");
 
   const [loadingTeam, setLoadingTeam] = useState(false);
@@ -195,7 +193,14 @@ export function TeamRegistration({
 
   function handleGradeChange(g: string) {
     setGradeGroup(g);
-    setSportId(""); // เปลี่ยนระดับชั้นแล้วต้องเลือกชนิดกีฬาใหม่
+    setGenderType(""); // เปลี่ยนระดับชั้นแล้วต้องเลือกประเภท/ชนิดกีฬาใหม่
+    setSportId("");
+    refresh("", house);
+  }
+
+  function handleGenderChange(g: string) {
+    setGenderType(g);
+    setSportId(""); // เปลี่ยนประเภทแล้วต้องเลือกชนิดกีฬาใหม่
     refresh("", house);
   }
 
@@ -204,7 +209,9 @@ export function TeamRegistration({
     setCreating(true);
     setActionError(null);
     const sport = sports.find((s) => s.id === sportId);
-    const teamName = sport ? `${HOUSE_LABELS_TH[house] ?? house} - ${sport.name}` : null;
+    const teamName = sport
+      ? `${HOUSE_LABELS_TH[house] ?? house} - ${sport.name} (${GENDER_TYPE_LABELS_TH[sport.gender_type] ?? sport.gender_type})`
+      : null;
 
     const { data, error } = await supabase
       .from("teams")
@@ -244,7 +251,7 @@ export function TeamRegistration({
         const wantGender = selectedSport.gender_type === "male" ? "M" : "F";
         checks.push({
           key: "gender",
-          label: `เพศตรงกับรุ่นแข่งขัน (${GENDER_LABELS_TH[selectedSport.gender_type]})`,
+          label: `เพศตรงกับรุ่นแข่งขัน (${GENDER_TYPE_LABELS_TH[selectedSport.gender_type] ?? selectedSport.gender_type})`,
           ok: student.gender === wantGender,
         });
       }
@@ -381,7 +388,15 @@ export function TeamRegistration({
   // ตามตัวอักษรเพราะลำดับ ม.1-2/3-4/5-6/ม.ต้น/ม.ปลาย/รวม ที่ตั้งใจไว้จะเพี้ยนได้
   // ถ้าเรียง locale
   const gradeGroups = Array.from(new Set(sports.map((s) => s.grade_group)));
-  const sportsForGrade = sports.filter((s) => s.grade_group === gradeGroup);
+  // ตัวเลือก "ประเภท" (ชาย/หญิง/รวม) ของชนิดกีฬาทั้งหมดในระดับชั้นที่เลือกไว้ —
+  // เรียงตาม GENDER_TYPE_ORDER ไม่ใช่ลำดับที่มาจาก DB เพราะอยากให้ ชาย/หญิง/รวม
+  // ขึ้นเหมือนกันทุกระดับชั้น
+  const gendersForGrade = GENDER_TYPE_ORDER.filter((g) =>
+    sports.some((s) => s.grade_group === gradeGroup && s.gender_type === g)
+  );
+  const sportsForGrade = sports.filter(
+    (s) => s.grade_group === gradeGroup && s.gender_type === genderType
+  );
 
   const canEditRoster =
     !!team &&
@@ -405,7 +420,8 @@ export function TeamRegistration({
       <div>
         <p className="text-sm font-medium text-slate-900">ลงทะเบียนทีม (สแกน QR)</p>
         <p className="mt-0.5 text-sm text-slate-500">
-          เลือกสี → เลือกระดับชั้น → เลือกชนิดกีฬา แล้วสแกน QR บัตรนักเรียน (ใบเดิมจากระบบเช็คชื่อ) เพื่อเพิ่มเข้าทีม
+          เลือกสี → เลือกระดับชั้น → เลือกประเภท (ชาย/หญิง/รวม) → เลือกชนิดกีฬา แล้วสแกน QR บัตรนักเรียน
+          (ใบเดิมจากระบบเช็คชื่อ) เพื่อเพิ่มเข้าทีม
         </p>
       </div>
 
@@ -439,12 +455,28 @@ export function TeamRegistration({
         </select>
 
         <select
+          value={genderType}
+          onChange={(e) => handleGenderChange(e.target.value)}
+          disabled={!gradeGroup}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400"
+        >
+          <option value="">{gradeGroup ? "เลือกประเภท" : "เลือกระดับชั้นก่อน"}</option>
+          {gendersForGrade.map((g) => (
+            <option key={g} value={g}>
+              {GENDER_TYPE_LABELS_TH[g] ?? g}
+            </option>
+          ))}
+        </select>
+
+        <select
           value={sportId}
           onChange={(e) => handleSportChange(e.target.value)}
-          disabled={!gradeGroup}
+          disabled={!gradeGroup || !genderType}
           className="min-w-[220px] rounded-md border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400"
         >
-          <option value="">{gradeGroup ? "เลือกชนิดกีฬา" : "เลือกระดับชั้นก่อน"}</option>
+          <option value="">
+            {!gradeGroup ? "เลือกระดับชั้นก่อน" : !genderType ? "เลือกประเภทก่อน" : "เลือกชนิดกีฬา"}
+          </option>
           {sportsForGrade.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
@@ -455,7 +487,7 @@ export function TeamRegistration({
 
       {selectedSport && (
         <p className="text-xs text-slate-500">
-          {selectedSport.grade_group} · {GENDER_LABELS_TH[selectedSport.gender_type] ?? selectedSport.gender_type}
+          {selectedSport.grade_group} · {GENDER_TYPE_LABELS_TH[selectedSport.gender_type] ?? selectedSport.gender_type}
           {selectedSport.team_size ? ` · ตัวจริง ${selectedSport.team_size} คน` : ""}
         </p>
       )}
