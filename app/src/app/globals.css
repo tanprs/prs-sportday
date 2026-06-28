@@ -10,12 +10,12 @@
   --color-foreground: var(--foreground);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ทั้งแอปออกแบบมาเป็น light mode อย่างเดียว (bg-white/bg-slate-* ฝังตรงทุกที่
+   ไม่มี dark: variant เลย) — ไม่ตั้ง prefers-color-scheme: dark ไว้ เพราะ
+   มันจะเปลี่ยน --foreground เป็นสีเทาอ่อนตามค่า boilerplate เดิมของ
+   create-next-app แต่พื้นหลังการ์ด/อินพุตยังเป็นสีขาวเหมือนเดิม ทำให้ตัวอักษร
+   ที่พึ่ง color ที่สืบทอดมา (เช่น ค่าที่พิมพ์ในช่อง input) อ่านไม่ออกเมื่อ
+   เครื่องผู้ใช้ตั้งเป็น dark mode */
 
 body {
   background: var(--background);

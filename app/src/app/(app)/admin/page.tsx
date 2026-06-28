@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { SyncRosterButton } from "@/components/SyncRosterButton";
+import { StudentInviteManager } from "@/components/StudentInviteManager";
 
 export default async function AdminPage() {
   const profile = await getCurrentProfile();
@@ -47,10 +49,12 @@ export default async function AdminPage() {
         </div>
       </div>
 
+      <SyncRosterButton />
+
+      <StudentInviteManager currentUserId={profile.id} />
+
       <div className="rounded-xl border border-dashed border-slate-300 bg-white p-5 text-sm text-slate-500">
-        การจัดการผู้ใช้ การอนุมัติทีม และการตั้งค่าช่วงเวลาลงทะเบียน จะเปิดใช้งานในเฟสถัดไป
-        นักเรียนจะถูกซิงค์เข้าระบบอัตโนมัติจากระบบเช็คชื่อ QR Code
-        เมื่อตั้งค่า Edge Function เสร็จสมบูรณ์ (ดู Phase 2 ขั้นต่อไป)
+        การอนุมัติทีม และการตั้งค่าช่วงเวลาลงทะเบียน จะเปิดใช้งานในเฟสถัดไป
       </div>
     </div>
   );

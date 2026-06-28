@@ -305,6 +305,84 @@ export type Database = {
         }
         Relationships: []
       }
+      sso_identities: {
+        Row: {
+          attendance_user_id: number
+          auth_user_id: string
+          created_at: string
+          id: string
+          last_login_at: string
+          username: string
+        }
+        Insert: {
+          attendance_user_id: number
+          auth_user_id: string
+          created_at?: string
+          id?: string
+          last_login_at?: string
+          username: string
+        }
+        Update: {
+          attendance_user_id?: number
+          auth_user_id?: string
+          created_at?: string
+          id?: string
+          last_login_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      student_login_invites: {
+        Row: {
+          claim_code: string
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          student_code: string
+        }
+        Insert: {
+          claim_code: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          student_code: string
+        }
+        Update: {
+          claim_code?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          student_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_login_invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_login_invites_student_code_fkey"
+            columns: ["student_code"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["student_code"]
+          },
+        ]
+      }
       students: {
         Row: {
           classroom: string

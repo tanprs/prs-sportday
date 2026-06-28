@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 // Paths a signed-out visitor may reach.
-const PUBLIC_PATHS = ["/", "/login", "/signup", "/scoreboard"];
+const PUBLIC_PATHS = ["/", "/login", "/scoreboard"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
