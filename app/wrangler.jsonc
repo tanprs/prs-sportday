@@ -1,7 +1,8 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
   "name": "prs-sportday",
+  "account_id": "096713cbed790e33bdeae4ad0d29d1a2",
+  "main": ".open-next/worker.js",
   "compatibility_date": "2026-06-28",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
