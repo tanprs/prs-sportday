@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { HOUSE_LABELS_TH } from "@/lib/auth";
+import { HOUSE_LABELS_TH, getCurrentProfile } from "@/lib/auth";
+import { TeamRegistration } from "@/components/TeamRegistration";
 
 const STATUS_LABELS_TH: Record<string, string> = {
   draft: "ฉบับร่าง",
@@ -9,8 +10,11 @@ const STATUS_LABELS_TH: Record<string, string> = {
   locked: "ปิดรายชื่อ",
 };
 
+const CAN_REGISTER_ROLES = ["admin", "teacher", "house_teacher", "sport_captain", "house_captain"];
+
 export default async function TeamsPage() {
   const supabase = await createClient();
+  const profile = await getCurrentProfile();
 
   const { data: teams } = await supabase
     .from("teams")
@@ -20,9 +24,23 @@ export default async function TeamsPage() {
 
   const { data: sports } = await supabase
     .from("sport_types")
-    .select("id, name");
+    .select("id, name, category, grade_group, gender_type, team_size, is_active, sort_order");
 
   const sportName = new Map((sports ?? []).map((s) => [s.id, s.name]));
+
+  // ส่งรายชื่อกีฬาที่ active (เรียงตาม sort_order) ลงไปให้ TeamRegistration ใช้ได้
+  // ตั้งแต่ render แรก — ไม่ต้องให้ client component ไป fetch เองตอน mount
+  const initialSports = (sports ?? [])
+    .filter((s) => s.is_active)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((s) => ({
+      id: s.id,
+      name: s.name,
+      category: s.category,
+      grade_group: s.grade_group,
+      gender_type: s.gender_type,
+      team_size: s.team_size,
+    }));
 
   return (
     <div className="space-y-4">
@@ -31,9 +49,18 @@ export default async function TeamsPage() {
           ทีม / การลงทะเบียน
         </h1>
         <p className="text-sm text-slate-500">
-          แสดงรายการทีมล่าสุด — ฟอร์มลงทะเบียนทีมจะเปิดใช้งานในเฟสถัดไป
+          แสดงรายการทีมล่าสุด {!profile || !CAN_REGISTER_ROLES.includes(profile.role) ? "" : "— เลื่อนลงเพื่อลงทะเบียนทีมด้วยการสแกน QR"}
         </p>
       </div>
+
+      {profile && CAN_REGISTER_ROLES.includes(profile.role) && (
+        <TeamRegistration
+          currentUserId={profile.id}
+          role={profile.role}
+          houseColor={profile.house_color}
+          initialSports={initialSports}
+        />
+      )}
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <table className="w-full text-sm">
