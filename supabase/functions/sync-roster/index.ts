@@ -10,6 +10,17 @@
 // ENV ที่ต้องตั้งเป็น Edge Function secret (Dashboard > Edge Functions > Secrets):
 //   ATTENDANCE_API_URL, ATTENDANCE_SERVICE_USERNAME, ATTENDANCE_SERVICE_PASSWORD
 // (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY ถูก inject ให้อัตโนมัติโดย Supabase อยู่แล้ว)
+//
+// ── อัปเดต (มิ.ย. 2569): incremental sync ด้วย updatedSince ──────────────────
+// ทีมระบบเช็คชื่อส่งคำแนะนำมาว่า Supabase egress (free tier 5GB/เดือน) และ
+// Render bandwidth ใช้ร่วมกันทั้งโรงเรียน เคยถูกพักให้บริการมาแล้วเพราะมีคน
+// ดึงข้อมูลทั้งหมดซ้ำ ๆ — ฟังก์ชันนี้เคยดึงนักเรียน "ทั้งหมด" (1,300+ คน) ใหม่
+// ทุกรอบ ทั้ง cron รายวันและตอนกดปุ่มมือ ตอนนี้แก้ให้เก็บเวลาซิงค์สำเร็จล่าสุด
+// ไว้ในตาราง `roster_sync_state` (migration 0010) แล้วส่งเป็น `updatedSince`
+// ในรอบถัดไป เพื่อดึงเฉพาะนักเรียนที่ข้อมูลเปลี่ยนจริง รอบแรก (ยังไม่มี
+// checkpoint) จะดึงทั้งหมดเหมือนเดิมครั้งเดียว หลังจากนั้นจะเป็น incremental
+// ตลอด เวลาที่บันทึกเป็น checkpoint คือเวลา "ก่อนเริ่มดึง" ของรอบนั้น
+// (ไม่ใช่เวลาที่ทำเสร็จ) เพื่อไม่ให้พลาดนักเรียนที่ข้อมูลเปลี่ยนระหว่างรอบกำลังรัน
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -106,6 +117,27 @@ Deno.serve(async (req: Request) => {
   }
 
   const startedAt = Date.now();
+  // checkpoint เวลา "ก่อนเริ่มดึง" ของรอบนี้ — ใช้เป็น last_synced_at ใหม่
+  // ถ้ารอบนี้สำเร็จทั้งหมด (ดู comment ด้านบนไฟล์ว่าทำไมต้องเป็นเวลาเริ่ม)
+  const runStartedAt = new Date(startedAt);
+
+  // ── 0) อ่าน checkpoint ซิงค์ล่าสุด (roster_sync_state) ────────────────────
+  let updatedSince: string | null = null;
+  {
+    const { data: stateRow, error: stateErr } = await admin
+      .from("roster_sync_state")
+      .select("last_synced_at")
+      .eq("id", true)
+      .maybeSingle();
+    if (stateErr) {
+      return json(
+        { success: false, message: "อ่าน roster_sync_state ไม่สำเร็จ: " + stateErr.message },
+        500
+      );
+    }
+    updatedSince = stateRow?.last_synced_at ?? null;
+  }
+  const isIncremental = updatedSince !== null;
 
   // ── 1) login เข้า attendance-system ด้วยบัญชีบริการ ──────────────────────
   let accessToken: string;
@@ -135,7 +167,9 @@ Deno.serve(async (req: Request) => {
     return json({ success: false, message: "เชื่อมต่อระบบเช็คชื่อไม่ได้: " + String(e) }, 502);
   }
 
-  // ── 2) ดึงนักเรียนทั้งหมด (วนหน้า) ────────────────────────────────────────
+  // ── 2) ดึงนักเรียน (วนหน้า) — ถ้ามี checkpoint ส่ง updatedSince ไปด้วย ────
+  // เพื่อให้ระบบเช็คชื่อกรองมาให้เฉพาะนักเรียนที่ข้อมูลเปลี่ยนหลัง checkpoint
+  // เท่านั้น ไม่ใช่ทั้งโรงเรียนทุกรอบ (ดู comment บนสุดของไฟล์)
   const allStudents: AttStudent[] = [];
   let page = 1;
   const limit = 1000;
@@ -143,8 +177,10 @@ Deno.serve(async (req: Request) => {
 
   try {
     do {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (updatedSince) params.set("updatedSince", updatedSince);
       const res = await fetch(
-        `${ATTENDANCE_API_URL}/api/integration/students?page=${page}&limit=${limit}`,
+        `${ATTENDANCE_API_URL}/api/integration/students?${params.toString()}`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       const j = await res.json();
@@ -222,8 +258,29 @@ Deno.serve(async (req: Request) => {
     upserted += chunk.length;
   }
 
+  // ── 5) บันทึก checkpoint ใหม่ — เฉพาะตอนรอบนี้สำเร็จทั้งหมดเท่านั้น ───────
+  const { error: checkpointErr } = await admin
+    .from("roster_sync_state")
+    .upsert({ id: true, last_synced_at: runStartedAt.toISOString() }, { onConflict: "id" });
+  if (checkpointErr) {
+    // ข้อมูลนักเรียนบันทึกสำเร็จไปแล้ว แค่ checkpoint เขียนไม่ได้ — แจ้งเตือน
+    // แต่ไม่ต้องถือว่าทั้งรอบ fail (รอบถัดไปจะ fallback เป็น full sync แทน)
+    return json({
+      success: true,
+      mode: isIncremental ? "incremental" : "full",
+      updatedSince,
+      totalFetched: allStudents.length,
+      totalUpserted: upserted,
+      skippedNoClassroom: skipped,
+      durationMs: Date.now() - startedAt,
+      warning: "บันทึก checkpoint ซิงค์ไม่สำเร็จ (รอบถัดไปจะดึงทั้งหมดใหม่): " + checkpointErr.message,
+    });
+  }
+
   return json({
     success: true,
+    mode: isIncremental ? "incremental" : "full",
+    updatedSince,
     totalFetched: allStudents.length,
     totalUpserted: upserted,
     skippedNoClassroom: skipped,
