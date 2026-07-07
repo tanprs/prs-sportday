@@ -2,7 +2,10 @@
 
 // TeamApprovalManager — แสดงรายการทีมที่ส่งรออนุมัติ (status = submitted)
 // พร้อมปุ่ม "อนุมัติ" และ "ตีกลับ" (มีช่องใส่เหตุผลก่อนยืนยัน)
-// ใช้งานได้เฉพาะ admin/teacher (admin/page.tsx redirect ออกก่อนถึงหน้านี้อยู่แล้ว)
+//
+// สิทธิ์:
+//   - admin / teacher   → เห็นทุกทีม ทุกสี
+//   - house_teacher     → เห็นเฉพาะทีมของสีตัวเอง (กรองตาม currentHouseColor)
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -33,11 +36,16 @@ const HOUSE_COLOR_HEX: Record<string, string> = {
 
 export function TeamApprovalManager({
   currentUserId,
+  currentUserRole,
+  currentHouseColor,
 }: {
   currentUserId: string;
+  currentUserRole: string;
+  currentHouseColor: string | null;
 }) {
   const router = useRouter();
   const supabase = createClient();
+  const isHouseTeacher = currentUserRole === "house_teacher";
 
   const [teams, setTeams] = useState<TeamRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,20 +58,27 @@ export function TeamApprovalManager({
   const fetchTeams = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, error: err } = await supabase
+    let query = supabase
       .from("teams")
       .select(
         "id, team_name, house_color, status, created_at, reject_note, sport_id, sport_types(name, gender_type), team_members(id)"
       )
       .eq("status", "submitted")
       .order("created_at", { ascending: true });
+
+    // house_teacher เห็นเฉพาะสีตัวเอง
+    if (isHouseTeacher && currentHouseColor) {
+      query = query.eq("house_color", currentHouseColor);
+    }
+
+    const { data, error: err } = await query;
     setLoading(false);
     if (err) {
       setError("โหลดรายการทีมไม่สำเร็จ: " + err.message);
       return;
     }
     setTeams((data ?? []) as unknown as TeamRow[]);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isHouseTeacher, currentHouseColor]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchTeams();
@@ -114,11 +129,15 @@ export function TeamApprovalManager({
     fetchTeams();
   }
 
+  const sectionTitle = isHouseTeacher
+    ? `อนุมัติทีม${currentHouseColor ? ` (${HOUSE_LABELS_TH[currentHouseColor] ?? currentHouseColor})` : ""}`
+    : "อนุมัติทีม";
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-slate-700">
-          อนุมัติทีม{" "}
+          {sectionTitle}{" "}
           {!loading && (
             <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
               {teams.length} ทีมรออยู่
@@ -134,9 +153,7 @@ export function TeamApprovalManager({
       </div>
 
       {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </div>
+        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
       )}
       {successMsg && (
         <div className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-700">
@@ -166,14 +183,11 @@ export function TeamApprovalManager({
                 className="rounded-xl border border-slate-200 bg-white p-4"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  {/* ข้อมูลทีม */}
                   <div className="flex items-start gap-3">
-                    {/* สัญลักษณ์สี */}
                     <div
                       className="mt-0.5 h-4 w-4 shrink-0 rounded-full"
                       style={{
-                        backgroundColor:
-                          HOUSE_COLOR_HEX[team.house_color] ?? "#888",
+                        backgroundColor: HOUSE_COLOR_HEX[team.house_color] ?? "#888",
                       }}
                     />
                     <div>
@@ -193,7 +207,6 @@ export function TeamApprovalManager({
                     </div>
                   </div>
 
-                  {/* ปุ่มดำเนินการ */}
                   {!isRejecting && (
                     <div className="flex shrink-0 gap-2">
                       <button
@@ -218,7 +231,6 @@ export function TeamApprovalManager({
                   )}
                 </div>
 
-                {/* แบบฟอร์มตีกลับ */}
                 {isRejecting && (
                   <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
                     <p className="text-xs font-medium text-slate-600">

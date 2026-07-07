@@ -4,23 +4,32 @@ import { createClient } from "@/lib/supabase/server";
 import { SyncRosterButton } from "@/components/SyncRosterButton";
 import { StudentInviteManager } from "@/components/StudentInviteManager";
 import { TeamApprovalManager } from "@/components/TeamApprovalManager";
+import { RegistrationWindowManager } from "@/components/RegistrationWindowManager";
 
 export default async function AdminPage() {
   const profile = await getCurrentProfile();
-  if (!profile || !["admin", "teacher"].includes(profile.role)) {
+  if (!profile || !["admin", "teacher", "house_teacher"].includes(profile.role)) {
     redirect("/dashboard");
   }
 
+  const isHouseTeacher = profile.role === "house_teacher";
   const supabase = await createClient();
+
+  // pending count — house_teacher เห็นเฉพาะสีตัวเอง
+  let pendingQuery = supabase
+    .from("teams")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "submitted");
+  if (isHouseTeacher && profile.house_color) {
+    pendingQuery = pendingQuery.eq("house_color", profile.house_color);
+  }
+
   const [
     { count: pendingTeams },
     { count: totalStudents },
     { count: totalUsers },
   ] = await Promise.all([
-    supabase
-      .from("teams")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "submitted"),
+    pendingQuery,
     supabase.from("students").select("id", { count: "exact", head: true }),
     supabase.from("user_profiles").select("id", { count: "exact", head: true }),
   ]);
@@ -50,11 +59,20 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      <TeamApprovalManager currentUserId={profile.id} />
+      <TeamApprovalManager
+        currentUserId={profile.id}
+        currentUserRole={profile.role}
+        currentHouseColor={profile.house_color ?? null}
+      />
 
-      <SyncRosterButton />
-
-      <StudentInviteManager currentUserId={profile.id} />
+      {/* RegistrationWindowManager แสดงเฉพาะ admin/teacher */}
+      {!isHouseTeacher && (
+        <>
+          <RegistrationWindowManager currentUserId={profile.id} />
+          <SyncRosterButton />
+          <StudentInviteManager currentUserId={profile.id} />
+        </>
+      )}
     </div>
   );
 }
