@@ -3,6 +3,7 @@ import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { SyncRosterButton } from "@/components/SyncRosterButton";
 import { StudentInviteManager } from "@/components/StudentInviteManager";
+import { TeamApprovalManager } from "@/components/TeamApprovalManager";
 
 export default async function AdminPage() {
   const profile = await getCurrentProfile();
@@ -49,13 +50,11 @@ export default async function AdminPage() {
         </div>
       </div>
 
+      <TeamApprovalManager currentUserId={profile.id} />
+
       <SyncRosterButton />
 
       <StudentInviteManager currentUserId={profile.id} />
-
-      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-5 text-sm text-slate-500">
-        การอนุมัติทีม และการตั้งค่าช่วงเวลาลงทะเบียน จะเปิดใช้งานในเฟสถัดไป
-      </div>
     </div>
   );
 }
