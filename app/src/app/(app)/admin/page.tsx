@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { SyncRosterButton } from "@/components/SyncRosterButton";
@@ -69,6 +70,25 @@ export default async function AdminPage() {
       {!isHouseTeacher && (
         <>
           <RegistrationWindowManager currentUserId={profile.id} />
+
+          {/* Bracket config shortcut */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-800">ตั้งค่า Bracket</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  กำหนดเส้นทางผู้ชนะไปรอบถัดไปอัตโนมัติ
+                </p>
+              </div>
+              <Link
+                href="/admin/bracket"
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              >
+                จัดการ Bracket →
+              </Link>
+            </div>
+          </div>
+
           <SyncRosterButton />
           <StudentInviteManager currentUserId={profile.id} />
         </>

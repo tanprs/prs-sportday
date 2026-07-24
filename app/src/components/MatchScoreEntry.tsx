@@ -74,6 +74,23 @@ export function MatchScoreEntry({
       setError(err.message);
       return;
     }
+
+    // เลื่อนผู้ชนะไปรอบถัดไปอัตโนมัติ
+    if (status === "completed" && winner_id) {
+      const { data: cur } = await supabase
+        .from("matches")
+        .select("next_match_id, next_slot")
+        .eq("id", matchId)
+        .single();
+      if (cur?.next_match_id && cur?.next_slot) {
+        const field = cur.next_slot === "a" ? "team_a_id" : "team_b_id";
+        await supabase
+          .from("matches")
+          .update({ [field]: winner_id })
+          .eq("id", cur.next_match_id);
+      }
+    }
+
     setEditing(false);
     router.refresh();
   }
