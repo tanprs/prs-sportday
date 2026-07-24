@@ -66,5 +66,6 @@ export const DEFAULT_THEME: HouseTheme = {
 };
 
 export function getTheme(house_color?: string | null): HouseTheme {
-  return (house_color && HOUSE_THEMES[house_color]) ?? DEFAULT_THEME;
+  if (house_color && house_color in HOUSE_THEMES) return HOUSE_THEMES[house_color];
+  return DEFAULT_THEME;
 }
