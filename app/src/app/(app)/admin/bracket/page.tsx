@@ -12,12 +12,24 @@ export default async function BracketConfigPage() {
 
   const supabase = await createClient();
 
-  const { data: matches } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: rawMatches } = await (supabase as any)
     .from("matches")
     .select("id, match_no, round, match_date, notes, next_match_id, next_slot, sport_id")
     .order("sport_id")
     .order("match_date", { ascending: true })
     .order("match_no", { ascending: true });
+
+  const matches = (rawMatches ?? []) as Array<{
+    id: string;
+    match_no: string | null;
+    round: string;
+    match_date: string | null;
+    notes: string | null;
+    next_match_id: string | null;
+    next_slot: "a" | "b" | null;
+    sport_id: string;
+  }>;
 
   const { data: sports } = await supabase
     .from("sport_types")
@@ -37,7 +49,7 @@ export default async function BracketConfigPage() {
       </div>
 
       <BracketConfigManager
-        matches={(matches ?? []) as Parameters<typeof BracketConfigManager>[0]["matches"]}
+        matches={matches}
         sports={sports ?? []}
       />
     </div>

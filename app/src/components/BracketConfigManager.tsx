@@ -78,8 +78,8 @@ export function BracketConfigManager({ matches, sports }: Props) {
     setEdits((prev) => ({
       ...prev,
       [matchId]: {
-        ...getCurrent({ id: matchId, next_match_id: null, next_slot: null } as Match),
-        ...prev[matchId],
+        next_match_id: prev[matchId]?.next_match_id ?? "",
+        next_slot: (prev[matchId]?.next_slot ?? "") as "a" | "b" | "",
         [field]: value,
       },
     }));
