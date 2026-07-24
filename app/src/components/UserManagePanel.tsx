@@ -76,27 +76,17 @@ export function UserManagePanel({ users, sports, currentUserId }: Props) {
     setSaving(true);
     setError(null);
 
-    const payload: Record<string, unknown> = {
-      role: draft.role,
-      is_active: draft.is_active,
-      full_name: draft.full_name,
-    };
-
-    if (ROLE_NEEDS_HOUSE[draft.role ?? ""]) {
-      payload.house_color = draft.house_color ?? null;
-    } else {
-      payload.house_color = null;
-    }
-
-    if (ROLE_NEEDS_SPORTS[draft.role ?? ""]) {
-      payload.assigned_sports = draft.assigned_sports?.length ? draft.assigned_sports : null;
-    } else {
-      payload.assigned_sports = null;
-    }
-
     const { error: err } = await supabase
       .from("user_profiles")
-      .update(payload)
+      .update({
+        role: draft.role as "admin" | "teacher" | "house_teacher" | "sport_captain" | "house_captain" | "referee",
+        is_active: draft.is_active ?? true,
+        full_name: draft.full_name ?? "",
+        house_color: ROLE_NEEDS_HOUSE[draft.role ?? ""] ? (draft.house_color ?? null) : null,
+        assigned_sports: ROLE_NEEDS_SPORTS[draft.role ?? ""]
+          ? (draft.assigned_sports?.length ? draft.assigned_sports : null)
+          : null,
+      })
       .eq("id", userId);
 
     setSaving(false);
