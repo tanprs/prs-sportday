@@ -12,6 +12,8 @@ type Match = {
   notes: string | null;
   next_match_id: string | null;
   next_slot: "a" | "b" | null;
+  loser_match_id: string | null;
+  loser_slot: "a" | "b" | null;
   sport_id: string;
 };
 
@@ -45,7 +47,7 @@ export function BracketConfigManager({ matches, sports }: Props) {
 
   // local state: track edits before saving
   const [edits, setEdits] = useState<
-    Record<string, { next_match_id: string; next_slot: "a" | "b" | "" }>
+    Record<string, { next_match_id: string; next_slot: "a" | "b" | ""; loser_match_id: string; loser_slot: "a" | "b" | "" }>
   >({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState<Record<string, boolean>>({});
@@ -67,19 +69,22 @@ export function BracketConfigManager({ matches, sports }: Props) {
     return edits[m.id] ?? {
       next_match_id: m.next_match_id ?? "",
       next_slot: (m.next_slot ?? "") as "a" | "b" | "",
+      loser_match_id: m.loser_match_id ?? "",
+      loser_slot: (m.loser_slot ?? "") as "a" | "b" | "",
     };
   }
 
   function setField(
     matchId: string,
-    field: "next_match_id" | "next_slot",
-    value: string
+    field: "next_match_id" | "next_slot" | "loser_match_id" | "loser_slot",
+    value: string,
+    m: Match
   ) {
     setEdits((prev) => ({
       ...prev,
       [matchId]: {
-        next_match_id: prev[matchId]?.next_match_id ?? "",
-        next_slot: (prev[matchId]?.next_slot ?? "") as "a" | "b" | "",
+        ...getCurrent(m),
+        ...prev[matchId],
         [field]: value,
       },
     }));
@@ -89,7 +94,7 @@ export function BracketConfigManager({ matches, sports }: Props) {
   async function handleSave(m: Match) {
     const cur = getCurrent(m);
     if (!cur.next_match_id || !cur.next_slot) {
-      setErrors((p) => ({ ...p, [m.id]: "ต้องเลือกทั้งแมตช์ปลายทางและ slot" }));
+      setErrors((p) => ({ ...p, [m.id]: "ต้องเลือกแมตช์ผู้ชนะและ slot" }));
       return;
     }
     setSaving((p) => ({ ...p, [m.id]: true }));
@@ -101,6 +106,8 @@ export function BracketConfigManager({ matches, sports }: Props) {
       .update({
         next_match_id: cur.next_match_id || null,
         next_slot: cur.next_slot || null,
+        loser_match_id: cur.loser_match_id || null,
+        loser_slot: cur.loser_slot || null,
       })
       .eq("id", m.id);
 
@@ -121,7 +128,7 @@ export function BracketConfigManager({ matches, sports }: Props) {
       .update({ next_match_id: null, next_slot: null })
       .eq("id", m.id);
     setSaving((p) => ({ ...p, [m.id]: false }));
-    setEdits((p) => ({ ...p, [m.id]: { next_match_id: "", next_slot: "" } }));
+    setEdits((p) => ({ ...p, [m.id]: { next_match_id: "", next_slot: "", loser_match_id: "", loser_slot: "" } }));
     setSaved((p) => ({ ...p, [m.id]: false }));
     router.refresh();
   }
@@ -181,40 +188,65 @@ export function BracketConfigManager({ matches, sports }: Props) {
                       )}
                     </p>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      {/* ผู้ชนะไปแมตช์ */}
-                      <div className="flex flex-col gap-1">
-                        <span className="text-xs text-slate-400">ไปแมตช์</span>
-                        <select
-                          value={cur.next_match_id}
-                          onChange={(e) =>
-                            setField(m.id, "next_match_id", e.target.value)
-                          }
-                          className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-indigo-400 focus:outline-none"
-                        >
-                          <option value="">— เลือกแมตช์ปลายทาง —</option>
-                          {finals.map((f) => (
-                            <option key={f.id} value={f.id}>
-                              {matchDisplay(f)}
-                            </option>
-                          ))}
-                        </select>
+                    <div className="flex flex-wrap items-center gap-4">
+                      {/* ─ ผู้ชนะ ─ */}
+                      <div className="flex items-end gap-2">
+                        <span className="mb-1.5 text-xs font-medium text-emerald-700">🏆 ผู้ชนะ</span>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-slate-400">ไปแมตช์</span>
+                          <select
+                            value={cur.next_match_id}
+                            onChange={(e) => setField(m.id, "next_match_id", e.target.value, m)}
+                            className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-indigo-400 focus:outline-none"
+                          >
+                            <option value="">— เลือก —</option>
+                            {finals.map((f) => (
+                              <option key={f.id} value={f.id}>{matchDisplay(f)}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-slate-400">เป็น</span>
+                          <select
+                            value={cur.next_slot}
+                            onChange={(e) => setField(m.id, "next_slot", e.target.value, m)}
+                            className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-indigo-400 focus:outline-none"
+                          >
+                            <option value="">— slot —</option>
+                            <option value="a">ทีม A</option>
+                            <option value="b">ทีม B</option>
+                          </select>
+                        </div>
                       </div>
 
-                      {/* slot */}
-                      <div className="flex flex-col gap-1">
-                        <span className="text-xs text-slate-400">เป็น</span>
-                        <select
-                          value={cur.next_slot}
-                          onChange={(e) =>
-                            setField(m.id, "next_slot", e.target.value)
-                          }
-                          className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-indigo-400 focus:outline-none"
-                        >
-                          <option value="">— slot —</option>
-                          <option value="a">ทีม A</option>
-                          <option value="b">ทีม B</option>
-                        </select>
+                      {/* ─ ผู้แพ้ ─ */}
+                      <div className="flex items-end gap-2">
+                        <span className="mb-1.5 text-xs font-medium text-slate-400">🥉 ผู้แพ้</span>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-slate-400">ไปแมตช์</span>
+                          <select
+                            value={cur.loser_match_id}
+                            onChange={(e) => setField(m.id, "loser_match_id", e.target.value, m)}
+                            className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-indigo-400 focus:outline-none"
+                          >
+                            <option value="">— เลือก —</option>
+                            {finals.map((f) => (
+                              <option key={f.id} value={f.id}>{matchDisplay(f)}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-slate-400">เป็น</span>
+                          <select
+                            value={cur.loser_slot}
+                            onChange={(e) => setField(m.id, "loser_slot", e.target.value, m)}
+                            className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 focus:border-indigo-400 focus:outline-none"
+                          >
+                            <option value="">— slot —</option>
+                            <option value="a">ทีม A</option>
+                            <option value="b">ทีม B</option>
+                          </select>
+                        </div>
                       </div>
 
                       {/* save */}

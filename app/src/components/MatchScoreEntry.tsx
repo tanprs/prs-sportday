@@ -75,23 +75,34 @@ export function MatchScoreEntry({
       return;
     }
 
-    // เลื่อนผู้ชนะไปรอบถัดไปอัตโนมัติ
-    if (status === "completed" && winner_id) {
+    // เลื่อนผู้ชนะ/ผู้แพ้ไปรอบถัดไปอัตโนมัติ
+    if (status === "completed") {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: cur } = await (supabase as any)
         .from("matches")
-        .select("next_match_id, next_slot")
+        .select("next_match_id, next_slot, loser_match_id, loser_slot")
         .eq("id", matchId)
         .single();
-      if (cur?.next_match_id && cur?.next_slot) {
-        const field = cur.next_slot === "a" ? "team_a_id" : "team_b_id";
-        const updatePayload = field === "team_a_id"
+
+      // หา loser_id (ทีมที่แพ้)
+      const loser_id =
+        winner_id === teamAId ? teamBId :
+        winner_id === teamBId ? teamAId : null;
+
+      // เลื่อนผู้ชนะ
+      if (winner_id && cur?.next_match_id && cur?.next_slot) {
+        const winPayload = cur.next_slot === "a"
           ? { team_a_id: winner_id }
           : { team_b_id: winner_id };
-        await supabase
-          .from("matches")
-          .update(updatePayload)
-          .eq("id", cur.next_match_id);
+        await supabase.from("matches").update(winPayload).eq("id", cur.next_match_id);
+      }
+
+      // เลื่อนผู้แพ้ไปชิงที่ 3
+      if (loser_id && cur?.loser_match_id && cur?.loser_slot) {
+        const losePayload = cur.loser_slot === "a"
+          ? { team_a_id: loser_id }
+          : { team_b_id: loser_id };
+        await supabase.from("matches").update(losePayload).eq("id", cur.loser_match_id);
       }
     }
 

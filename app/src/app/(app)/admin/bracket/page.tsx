@@ -15,7 +15,7 @@ export default async function BracketConfigPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: rawMatches } = await (supabase as any)
     .from("matches")
-    .select("id, match_no, round, match_date, notes, next_match_id, next_slot, sport_id")
+    .select("id, match_no, round, match_date, notes, next_match_id, next_slot, loser_match_id, loser_slot, sport_id")
     .order("sport_id")
     .order("match_date", { ascending: true })
     .order("match_no", { ascending: true });
@@ -28,6 +28,8 @@ export default async function BracketConfigPage() {
     notes: string | null;
     next_match_id: string | null;
     next_slot: "a" | "b" | null;
+    loser_match_id: string | null;
+    loser_slot: "a" | "b" | null;
     sport_id: string;
   }>;
 
