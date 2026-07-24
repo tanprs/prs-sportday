@@ -77,7 +77,8 @@ export function MatchScoreEntry({
 
     // เลื่อนผู้ชนะไปรอบถัดไปอัตโนมัติ
     if (status === "completed" && winner_id) {
-      const { data: cur } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: cur } = await (supabase as any)
         .from("matches")
         .select("next_match_id, next_slot")
         .eq("id", matchId)

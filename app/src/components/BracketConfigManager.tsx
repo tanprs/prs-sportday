@@ -95,7 +95,8 @@ export function BracketConfigManager({ matches, sports }: Props) {
     setSaving((p) => ({ ...p, [m.id]: true }));
     setErrors((p) => ({ ...p, [m.id]: "" }));
 
-    const { error: err } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: err } = await (supabase as any)
       .from("matches")
       .update({
         next_match_id: cur.next_match_id || null,
@@ -114,7 +115,8 @@ export function BracketConfigManager({ matches, sports }: Props) {
 
   async function handleClear(m: Match) {
     setSaving((p) => ({ ...p, [m.id]: true }));
-    await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any)
       .from("matches")
       .update({ next_match_id: null, next_slot: null })
       .eq("id", m.id);
