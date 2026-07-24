@@ -100,12 +100,17 @@ export default async function MatchesPage() {
                       {sportLabel.get(m.sport_id) ?? "-"}
                     </td>
                     <td className="px-4 py-3 text-slate-600">
-                      {ROUND_LABELS_TH[m.round] ?? m.round}
+                      <div>{ROUND_LABELS_TH[m.round] ?? m.round}</div>
+                      {m.match_no && (
+                        <div className="text-xs text-slate-400">{m.match_no}</div>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-slate-800">
-                      {(m.team_a_id ? teamLabel.get(m.team_a_id) : "-") +
-                        " vs " +
-                        (m.team_b_id ? teamLabel.get(m.team_b_id) : "-")}
+                      {m.team_a_id || m.team_b_id
+                        ? (m.team_a_id ? teamLabel.get(m.team_a_id) : "-") +
+                          " vs " +
+                          (m.team_b_id ? teamLabel.get(m.team_b_id) : "-")
+                        : (m.notes ?? "- vs -")}
                     </td>
                     <td className="px-4 py-3 text-center font-mono text-slate-800">
                       {m.score_a ?? 0} - {m.score_b ?? 0}
