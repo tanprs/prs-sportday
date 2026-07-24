@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { MatchScoreEntry } from "@/components/MatchScoreEntry";
+import { MatchScheduleEdit } from "@/components/MatchScheduleEdit";
 
 const STATUS_LABELS_TH: Record<string, string> = {
   scheduled: "รอแข่ง",
@@ -33,7 +34,7 @@ export default async function MatchesPage() {
   const { data: matches } = await supabase
     .from("matches")
     .select(
-      "id, round, score_a, score_b, status, match_date, venue, sport_id, team_a_id, team_b_id"
+      "id, round, match_no, score_a, score_b, status, match_date, venue, notes, sport_id, team_a_id, team_b_id"
     )
     .order("match_date", { ascending: true })
     .limit(200);
@@ -78,6 +79,7 @@ export default async function MatchesPage() {
               <th className="px-4 py-3 text-center">ผล</th>
               <th className="px-4 py-3">สถานะ</th>
               {showActions && <th className="px-4 py-3">ดำเนินการ</th>}
+              {canEditAny && <th className="px-4 py-3">ตาราง</th>}
             </tr>
           </thead>
           <tbody>
@@ -135,13 +137,25 @@ export default async function MatchesPage() {
                         )}
                       </td>
                     )}
+                    {canEditAny && (
+                      <td className="px-4 py-3">
+                        <MatchScheduleEdit
+                          matchId={m.id}
+                          initialDate={m.match_date ?? null}
+                          initialVenue={m.venue ?? null}
+                          initialNotes={m.notes ?? null}
+                          initialMatchNo={m.match_no ?? null}
+                          sportLabel={sportLabel.get(m.sport_id) ?? ""}
+                        />
+                      </td>
+                    )}
                   </tr>
                 );
               })
             ) : (
               <tr>
                 <td
-                  colSpan={showActions ? 7 : 6}
+                  colSpan={showActions && canEditAny ? 8 : showActions ? 7 : canEditAny ? 7 : 6}
                   className="px-4 py-8 text-center text-slate-400"
                 >
                   ยังไม่มีตารางแข่งในระบบ
