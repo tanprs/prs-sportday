@@ -92,12 +92,62 @@ export type Database = {
         }
         Relationships: []
       }
+      match_checkins: {
+        Row: {
+          checked_in_at: string
+          id: string
+          match_id: string
+          student_id: string
+          team_id: string
+        }
+        Insert: {
+          checked_in_at?: string
+          id?: string
+          match_id: string
+          student_id: string
+          team_id: string
+        }
+        Update: {
+          checked_in_at?: string
+          id?: string
+          match_id?: string
+          student_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_checkins_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_checkins_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_checkins_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           created_at: string | null
           id: string
+          loser_match_id: string | null
+          loser_slot: string | null
           match_date: string | null
           match_no: string | null
+          next_match_id: string | null
+          next_slot: string | null
           notes: string | null
           recorded_at: string | null
           recorded_by: string | null
@@ -106,7 +156,9 @@ export type Database = {
           score_b: number | null
           sport_id: string
           status: Database["public"]["Enums"]["match_status"] | null
+          team_a_checked_in: boolean
           team_a_id: string | null
+          team_b_checked_in: boolean
           team_b_id: string | null
           venue: string | null
           winner_id: string | null
@@ -114,8 +166,12 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          loser_match_id?: string | null
+          loser_slot?: string | null
           match_date?: string | null
           match_no?: string | null
+          next_match_id?: string | null
+          next_slot?: string | null
           notes?: string | null
           recorded_at?: string | null
           recorded_by?: string | null
@@ -124,7 +180,9 @@ export type Database = {
           score_b?: number | null
           sport_id: string
           status?: Database["public"]["Enums"]["match_status"] | null
+          team_a_checked_in?: boolean
           team_a_id?: string | null
+          team_b_checked_in?: boolean
           team_b_id?: string | null
           venue?: string | null
           winner_id?: string | null
@@ -132,8 +190,12 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          loser_match_id?: string | null
+          loser_slot?: string | null
           match_date?: string | null
           match_no?: string | null
+          next_match_id?: string | null
+          next_slot?: string | null
           notes?: string | null
           recorded_at?: string | null
           recorded_by?: string | null
@@ -142,12 +204,28 @@ export type Database = {
           score_b?: number | null
           sport_id?: string
           status?: Database["public"]["Enums"]["match_status"] | null
+          team_a_checked_in?: boolean
           team_a_id?: string | null
+          team_b_checked_in?: boolean
           team_b_id?: string | null
           venue?: string | null
           winner_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "matches_loser_match_id_fkey"
+            columns: ["loser_match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_next_match_id_fkey"
+            columns: ["next_match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "matches_sport_id_fkey"
             columns: ["sport_id"]
@@ -265,6 +343,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      roster_sync_state: {
+        Row: {
+          id: boolean
+          last_synced_at: string | null
+        }
+        Insert: {
+          id?: boolean
+          last_synced_at?: string | null
+        }
+        Update: {
+          id?: boolean
+          last_synced_at?: string | null
+        }
+        Relationships: []
       }
       sport_types: {
         Row: {
@@ -393,6 +486,7 @@ export type Database = {
           house_color: string | null
           id: string
           photo_url: string | null
+          qr_code_data: string | null
           student_code: string
           title: string | null
         }
@@ -405,6 +499,7 @@ export type Database = {
           house_color?: string | null
           id?: string
           photo_url?: string | null
+          qr_code_data?: string | null
           student_code: string
           title?: string | null
         }
@@ -417,6 +512,7 @@ export type Database = {
           house_color?: string | null
           id?: string
           photo_url?: string | null
+          qr_code_data?: string | null
           student_code?: string
           title?: string | null
         }
