@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import DailyResultsPublic from "@/components/DailyResultsPublic";
 
 export default async function ScoreboardPage() {
   const supabase = await createClient();
@@ -10,7 +11,7 @@ export default async function ScoreboardPage() {
 
   const { data: matches } = await supabase
     .from("matches")
-    .select("status, winner_id")
+    .select("status, winner_id, team_a_id, team_b_id")
     .eq("status", "completed");
 
   const { data: teams } = await supabase
@@ -37,6 +38,7 @@ export default async function ScoreboardPage() {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10">
       <div className="mx-auto max-w-2xl">
+        {/* header */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-slate-900">
             กระดานคะแนน — กีฬาสี 2569
@@ -46,6 +48,7 @@ export default async function ScoreboardPage() {
           </Link>
         </div>
 
+        {/* standings */}
         <div className="mt-6 space-y-3">
           {standings.length > 0 ? (
             standings.map((h, i) => (
@@ -54,14 +57,12 @@ export default async function ScoreboardPage() {
                 className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-slate-400">#{i + 1}</span>
+                  <span className="w-6 text-sm text-slate-400">#{i + 1}</span>
                   <span
                     className="h-4 w-4 rounded-full"
                     style={{ backgroundColor: h.primary_hex }}
                   />
-                  <span className="font-medium text-slate-900">
-                    {h.name_th}
-                  </span>
+                  <span className="font-medium text-slate-900">{h.name_th}</span>
                 </div>
                 <span className="text-sm text-slate-500">{h.wins} ชนะ</span>
               </div>
@@ -70,6 +71,12 @@ export default async function ScoreboardPage() {
             <p className="text-center text-slate-400">ยังไม่มีผลการแข่งขัน</p>
           )}
         </div>
+
+        {/* divider */}
+        <div className="my-8 border-t border-slate-200" />
+
+        {/* daily results */}
+        <DailyResultsPublic />
       </div>
     </main>
   );
