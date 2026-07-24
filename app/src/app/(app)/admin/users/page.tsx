@@ -60,14 +60,11 @@ export default async function UserManagePage() {
         </p>
       </div>
 
-      {/* สรุป */}
-      <div className="grid gap-3 sm:grid-cols-4 text-center">
-        {["admin","teacher","house_teacher","referee"].map((r) => {
+      {/* สรุปแถว 1 — admin / ครูกีฬาสี / กรรมการ */}
+      <div className="grid gap-3 sm:grid-cols-3 text-center">
+        {(["admin","teacher","referee"] as const).map((r) => {
           const count = userRows.filter((u) => u.role === r).length;
-          const labels: Record<string, string> = {
-            admin: "แอดมิน", teacher: "ครูกีฬาสี",
-            house_teacher: "ครูประจำสี", referee: "กรรมการ",
-          };
+          const labels = { admin: "แอดมิน", teacher: "ครูกีฬาสี", referee: "กรรมการ" };
           return (
             <div key={r} className="rounded-xl border border-slate-200 bg-white py-3">
               <p className="text-2xl font-semibold text-slate-900">{count}</p>
@@ -75,6 +72,58 @@ export default async function UserManagePage() {
             </div>
           );
         })}
+      </div>
+
+      {/* สรุปแถว 2 — ครูประจำสี แยกตามสี */}
+      <div>
+        <p className="mb-2 text-xs font-medium text-slate-500 uppercase tracking-wide">ครูประจำสี</p>
+        <div className="grid gap-3 sm:grid-cols-4 text-center">
+          {([
+            { color: "red",    hex: "#ef4444", label: "สีแดง" },
+            { color: "yellow", hex: "#f59e0b", label: "สีเหลือง" },
+            { color: "green",  hex: "#22c55e", label: "สีเขียว" },
+            { color: "blue",   hex: "#3b82f6", label: "สีน้ำเงิน" },
+          ] as const).map(({ color, hex, label }) => {
+            const count = userRows.filter(
+              (u) => u.role === "house_teacher" && u.house_color === color
+            ).length;
+            return (
+              <div key={color} className="rounded-xl border border-slate-200 bg-white py-3">
+                <div className="flex items-center justify-center gap-1.5">
+                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: hex }} />
+                  <p className="text-2xl font-semibold text-slate-900">{count}</p>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* สรุปแถว 3 — หัวหน้าชนิดกีฬา แยกตามสี */}
+      <div>
+        <p className="mb-2 text-xs font-medium text-slate-500 uppercase tracking-wide">หัวหน้าชนิดกีฬา</p>
+        <div className="grid gap-3 sm:grid-cols-4 text-center">
+          {([
+            { color: "red",    hex: "#ef4444", label: "สีแดง" },
+            { color: "yellow", hex: "#f59e0b", label: "สีเหลือง" },
+            { color: "green",  hex: "#22c55e", label: "สีเขียว" },
+            { color: "blue",   hex: "#3b82f6", label: "สีน้ำเงิน" },
+          ] as const).map(({ color, hex, label }) => {
+            const count = userRows.filter(
+              (u) => u.role === "sport_captain" && u.house_color === color
+            ).length;
+            return (
+              <div key={color} className="rounded-xl border border-slate-200 bg-white py-3">
+                <div className="flex items-center justify-center gap-1.5">
+                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: hex }} />
+                  <p className="text-2xl font-semibold text-slate-900">{count}</p>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">{label}</p>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <UserManagePanel

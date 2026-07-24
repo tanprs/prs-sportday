@@ -19,6 +19,8 @@ type Match = {
   sport_id: string;
   team_a_id: string | null;
   team_b_id: string | null;
+  team_a_checked_in: boolean;
+  team_b_checked_in: boolean;
 };
 
 type Props = {
@@ -218,6 +220,10 @@ export function MatchesTable({
                             initialStatus={m.status as "scheduled" | "ongoing" | "completed" | "cancelled"}
                             teamAId={m.team_a_id}
                             teamBId={m.team_b_id}
+                            teamAName={m.team_a_id ? teamLabel[m.team_a_id] : undefined}
+                            teamBName={m.team_b_id ? teamLabel[m.team_b_id] : undefined}
+                            initialCheckedInA={m.team_a_checked_in}
+                            initialCheckedInB={m.team_b_checked_in}
                           />
                         ) : (
                           <span className="text-xs text-slate-300">-</span>

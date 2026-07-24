@@ -14,7 +14,7 @@ export default async function MatchesPage() {
   const { data: matches } = await supabase
     .from("matches")
     .select(
-      "id, round, match_no, score_a, score_b, status, match_date, venue, notes, sport_id, team_a_id, team_b_id"
+      "id, round, match_no, score_a, score_b, status, match_date, venue, notes, sport_id, team_a_id, team_b_id, team_a_checked_in, team_b_checked_in"
     )
     .order("match_date", { ascending: true })
     .limit(200);
