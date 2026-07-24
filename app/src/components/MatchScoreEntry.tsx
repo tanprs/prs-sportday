@@ -85,9 +85,12 @@ export function MatchScoreEntry({
         .single();
       if (cur?.next_match_id && cur?.next_slot) {
         const field = cur.next_slot === "a" ? "team_a_id" : "team_b_id";
+        const updatePayload = field === "team_a_id"
+          ? { team_a_id: winner_id }
+          : { team_b_id: winner_id };
         await supabase
           .from("matches")
-          .update({ [field]: winner_id })
+          .update(updatePayload)
           .eq("id", cur.next_match_id);
       }
     }
