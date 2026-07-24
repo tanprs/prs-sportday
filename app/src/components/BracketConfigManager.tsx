@@ -45,6 +45,8 @@ export function BracketConfigManager({ matches, sports }: Props) {
   const router = useRouter();
   const supabase = createClient();
 
+  const [filterSport, setFilterSport] = useState<string>("");
+
   // local state: track edits before saving
   const [edits, setEdits] = useState<
     Record<string, { next_match_id: string; next_slot: "a" | "b" | ""; loser_match_id: string; loser_slot: "a" | "b" | "" }>
@@ -133,6 +135,10 @@ export function BracketConfigManager({ matches, sports }: Props) {
     router.refresh();
   }
 
+  const filteredEntries = Object.entries(grouped).filter(([sportId]) =>
+    filterSport === "" || sportId === filterSport
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -147,7 +153,36 @@ export function BracketConfigManager({ matches, sports }: Props) {
         </p>
       </div>
 
-      {Object.entries(grouped).map(([sportId, sportMatches]) => {
+      {/* ── filter bar ── */}
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={filterSport}
+          onChange={(e) => setFilterSport(e.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+        >
+          <option value="">🏅 ทุกชนิดกีฬา ({Object.keys(grouped).length} รายการ)</option>
+          {sports
+            .filter((s) => s.id in grouped)
+            .map((s) => (
+              <option key={s.id} value={s.id}>
+                {sportLabel(s)}
+              </option>
+            ))}
+        </select>
+        {filterSport && (
+          <button
+            onClick={() => setFilterSport("")}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-500 hover:bg-slate-50"
+          >
+            ✕ ดูทั้งหมด
+          </button>
+        )}
+        <span className="ml-auto text-xs text-slate-400">
+          แสดง {filteredEntries.length} / {Object.keys(grouped).length} ชนิดกีฬา
+        </span>
+      </div>
+
+      {filteredEntries.map(([sportId, sportMatches]) => {
         const sport = sportMap.get(sportId);
         if (!sport) return null;
 
