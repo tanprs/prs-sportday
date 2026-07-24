@@ -71,6 +71,24 @@ export default async function AdminPage() {
         <>
           <RegistrationWindowManager currentUserId={profile.id} />
 
+          {/* User management shortcut */}
+          <div className="rounded-xl border border-slate-200 bg-white p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-800">จัดการผู้ใช้</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  ตั้งค่าบทบาท ครูประจำสี และกรรมการ
+                </p>
+              </div>
+              <Link
+                href="/admin/users"
+                className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              >
+                จัดการ →
+              </Link>
+            </div>
+          </div>
+
           {/* Bracket config shortcut */}
           <div className="rounded-xl border border-slate-200 bg-white p-5">
             <div className="flex items-center justify-between">
