@@ -29,6 +29,7 @@ export default async function UserManagePage() {
     ...u,
     username: usernameMap.get(u.id) ?? null,
     assigned_sports: u.assigned_sports as string[] | null,
+    is_active: u.is_active ?? true,
   }));
 
   // ดึง sport_types สำหรับ multi-select ของ referee
