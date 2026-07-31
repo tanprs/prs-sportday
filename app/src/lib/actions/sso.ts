@@ -24,6 +24,9 @@ type AttendanceLoginResult = {
       email: string;
       fullName: string;
       role: string;
+      classId: number | null;
+      className: string | null;
+      classes: { id: number; className: string }[];
     };
     accessToken: string;
     refreshToken: string;
@@ -105,6 +108,36 @@ export async function ssoLogin(formData: FormData) {
     }
 
     authUserId = created.user.id;
+
+    // ─── auto-assign role จากห้องครูประจำชั้น ───────────────────────────────
+    // trigger handle_new_user() ใส่ 'referee' ไว้ก่อน — ถ้าครูมีห้องประจำ
+    // ที่ตรงกับ classroom_house_mapping → เปลี่ยนเป็น house_teacher + house_color
+    let autoRole: "house_teacher" | "referee" = "referee";
+    let autoHouseColor: string | null = null;
+
+    const classNames = (attendanceUser.classes ?? []).map((c) => c.className).filter(Boolean);
+    if (classNames.length > 0) {
+      const { data: mapping } = await admin
+        .from("classroom_house_mapping")
+        .select("house_color")
+        .in("classroom", classNames)
+        .limit(1)
+        .maybeSingle();
+
+      if (mapping?.house_color) {
+        autoRole = "house_teacher";
+        autoHouseColor = mapping.house_color;
+      }
+    }
+
+    // อัปเดต user_profiles ที่ trigger สร้างให้ (ถ้าเปลี่ยน role จาก referee)
+    if (autoRole !== "referee" || autoHouseColor) {
+      await admin
+        .from("user_profiles")
+        .update({ role: autoRole, house_color: autoHouseColor })
+        .eq("id", authUserId);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     const { error: linkInsertErr } = await admin.from("sso_identities").insert({
       attendance_user_id: attendanceUser.id,
