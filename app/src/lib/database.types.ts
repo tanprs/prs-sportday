@@ -656,6 +656,10 @@ export type Database = {
         Returns: boolean
       }
       registration_is_open: { Args: { p_house: string }; Returns: boolean }
+      update_my_assigned_sports: {
+        Args: { sport_ids: string[] }
+        Returns: undefined
+      }
     }
     Enums: {
       match_round: "qualifier" | "final"
