@@ -12,7 +12,7 @@ const NAV_ITEMS: { href: string; label: string; roles: string[] | null }[] = [
   { href: "/matches", label: "ตารางแข่ง / ผลการแข่ง", roles: null },
   { href: "/results", label: "สรุปผลรายวัน", roles: null },
   { href: "/admin", label: "ผู้ดูแลระบบ", roles: ["admin", "teacher"] },
-  { href: "/profile", label: "กีฬาของฉัน", roles: ["referee"] },
+  { href: "/profile", label: "โปรไฟล์", roles: null },
 ];
 
 export default async function AppLayout({

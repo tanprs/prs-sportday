@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "กีฬาสี 2569",
   description: "ระบบบริหารจัดการกีฬาสีโรงเรียน",
+  icons: {
+    icon: "/sportday-logo.jpg",
+    apple: "/sportday-logo.jpg",
+  },
 };
 
 export default function RootLayout({

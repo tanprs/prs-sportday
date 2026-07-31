@@ -67,7 +67,57 @@ export default async function TeamsPage() {
         />
       )}
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      {/* ── Mobile card view ── */}
+      <div className="sm:hidden space-y-2">
+        {teams && teams.length > 0 ? (
+          teams.map((team) => {
+            const gender = sportGender.get(team.sport_id);
+            const genderLabel = gender ? GENDER_TYPE_LABELS_TH[gender] ?? gender : null;
+            const statusLabel = team.status ? STATUS_LABELS_TH[team.status] : "-";
+            const statusColor: Record<string, string> = {
+              draft: "bg-slate-100 text-slate-500",
+              submitted: "bg-amber-100 text-amber-700",
+              approved: "bg-green-100 text-green-700",
+              rejected: "bg-red-100 text-red-700",
+              locked: "bg-blue-100 text-blue-700",
+            };
+            const houseColor: Record<string, string> = {
+              red: "bg-red-100 text-red-700",
+              blue: "bg-blue-100 text-blue-700",
+              green: "bg-green-100 text-green-700",
+              yellow: "bg-yellow-100 text-yellow-700",
+            };
+            return (
+              <div key={team.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3 space-y-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-slate-900 text-sm leading-snug">
+                      {sportName.get(team.sport_id) ?? "-"}
+                      {genderLabel && (
+                        <span className="ml-1 text-slate-400 font-normal">({genderLabel})</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5">{team.team_name ?? "ไม่มีชื่อทีม"}</p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor[team.status ?? ""] ?? "bg-slate-100 text-slate-500"}`}>
+                    {statusLabel}
+                  </span>
+                </div>
+                {team.house_color && (
+                  <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${houseColor[team.house_color] ?? "bg-slate-100 text-slate-500"}`}>
+                    {HOUSE_LABELS_TH[team.house_color] ?? team.house_color}
+                  </span>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <p className="text-center text-sm text-slate-400 py-8">ยังไม่มีทีมในระบบ</p>
+        )}
+      </div>
+
+      {/* ── Desktop table ── */}
+      <div className="hidden sm:block overflow-hidden rounded-xl border border-slate-200 bg-white">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-slate-500">
             <tr>

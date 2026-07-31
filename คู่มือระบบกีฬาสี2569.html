@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>คู่มือการใช้งาน ระบบกีฬาสี 2569</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sarabun', 'TH Sarabun New', sans-serif;
+    font-size: 14pt;
+    color: #1e293b;
+    line-height: 1.8;
+    background: #f8fafc;
+  }
+
+  /* ── print ── */
+  @media print {
+    body { background: white; font-size: 12pt; }
+    .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .section-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .role-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .note, .warn { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .steps li::before { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page-break { page-break-before: always; }
+    .cover { page-break-after: always; min-height: 100vh; }
+    nav { display: none !important; }
+    .print-btn { display: none !important; }
+  }
+
+  /* ── screen nav ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: #1e1b4b;
+    padding: 10px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  nav .brand { color: white; font-weight: 700; font-size: 15pt; }
+  .print-btn {
+    background: #6366f1; color: white;
+    border: none; border-radius: 8px;
+    padding: 7px 18px; font-size: 12pt; font-family: inherit;
+    cursor: pointer; font-weight: 600;
+  }
+  .print-btn:hover { background: #4f46e5; }
+
+  .wrapper { max-width: 860px; margin: 0 auto; padding: 80px 24px 60px; }
+
+  /* ── cover ── */
+  .cover {
+    background: #1e1b4b;
+    color: white;
+    border-radius: 16px;
+    text-align: center;
+    padding: 80px 40px;
+    margin-bottom: 48px;
+  }
+  .cover-logo {
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    border: 4px solid rgba(255,255,255,0.35);
+    margin-bottom: 28px;
+    object-fit: cover;
+  }
+  .cover h1 { font-size: 28pt; font-weight: 700; margin-bottom: 10px; }
+  .cover h2 { font-size: 17pt; font-weight: 300; opacity: 0.85; margin-bottom: 6px; }
+  .cover .site { font-size: 11pt; opacity: 0.55; margin-top: 20px; }
+
+  /* ── section header ── */
+  .section-header {
+    background: #1e1b4b;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    margin: 40px 0 18px;
+    font-size: 17pt;
+    font-weight: 700;
+  }
+  .section-header.green  { background: #15803d; }
+  .section-header.blue   { background: #1d4ed8; }
+  .section-header.indigo { background: #4338ca; }
+  .section-header.amber  { background: #b45309; }
+
+  /* ── role badge ── */
+  .role-badge {
+    display: inline-block;
+    padding: 3px 13px;
+    border-radius: 20px;
+    font-size: 11pt;
+    font-weight: 600;
+    margin: 0 4px 8px 0;
+  }
+  .badge-admin   { background: #ede9fe; color: #5b21b6; }
+  .badge-teacher { background: #dbeafe; color: #1e40af; }
+  .badge-house   { background: #dcfce7; color: #15803d; }
+  .badge-referee { background: #fef3c7; color: #b45309; }
+  .badge-all     { background: #f1f5f9; color: #334155; }
+
+  /* ── card ── */
+  .card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 14px 0;
+  }
+  .card h3 { font-size: 14pt; font-weight: 700; color: #1e1b4b; margin-bottom: 7px; }
+  .card ul { padding-left: 22px; }
+  .card li { margin-bottom: 4px; font-size: 13pt; color: #475569; }
+
+  /* ── steps ── */
+  .steps { counter-reset: step; list-style: none; padding: 0; }
+  .steps li {
+    counter-increment: step;
+    padding: 11px 14px 11px 52px;
+    position: relative;
+    margin-bottom: 8px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-size: 13pt;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 13px; top: 50%;
+    transform: translateY(-50%);
+    width: 28px; height: 28px;
+    background: #4f46e5;
+    color: white;
+    border-radius: 50%;
+    font-size: 11pt;
+    font-weight: 700;
+    display: flex;
+    align-items: center; justify-content: center;
+  }
+
+  /* ── table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 12.5pt; margin: 12px 0; }
+  th { background: #1e1b4b; color: white; padding: 9px 13px; text-align: left; }
+  td { padding: 9px 13px; border-bottom: 1px solid #e2e8f0; }
+  tr:nth-child(even) td { background: #f8fafc; }
+
+  /* ── note / warn ── */
+  .note {
+    border-left: 4px solid #6366f1;
+    background: #eef2ff;
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: 12.5pt;
+    color: #3730a3;
+  }
+  .warn {
+    border-left: 4px solid #f59e0b;
+    background: #fffbeb;
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: 12.5pt;
+    color: #78350f;
+  }
+
+  h2 { font-size: 16pt; font-weight: 700; color: #1e1b4b; margin: 22px 0 10px; }
+  h3 { font-size: 14pt; font-weight: 600; color: #334155; margin: 14px 0 8px; }
+  p  { margin-bottom: 9px; font-size: 13pt; }
+
+  /* ── toc ── */
+  .toc { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; margin-bottom: 40px; }
+  .toc h2 { margin-top: 0; }
+  .toc-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #cbd5e1; font-size: 12.5pt; }
+  .toc-chapter { font-weight: 700; color: #1e1b4b; margin-top: 10px; border-bottom-color: #94a3b8 !important; }
+
+  /* ── chapter block ── */
+  .chapter { background: white; border-radius: 14px; padding: 28px 32px; margin-bottom: 32px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+
+  footer { text-align: center; color: #94a3b8; font-size: 11pt; margin-top: 40px; padding: 20px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">📋 คู่มือกีฬาสี 2569</span>
+  <button class="print-btn" onclick="window.print()">🖨 พิมพ์ / บันทึก PDF</button>
+</nav>
+
+<div class="wrapper">
+
+<!-- COVER -->
+<div class="cover">
+  <img class="cover-logo" src="https://prs-sportday.teachertan.workers.dev/sportday-logo.jpg" alt="PRS">
+  <h1>คู่มือการใช้งาน</h1>
+  <h2>ระบบบริหารจัดการกีฬาสี 2569<br>โรงเรียนผดุงราษฎร์</h2>
+  <div class="site">prs-sportday.teachertan.workers.dev &nbsp;·&nbsp; ปีการศึกษา 2569</div>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h2>สารบัญ</h2>
+  <div class="toc-item toc-chapter"><span>1. ภาพรวมและการเข้าใช้งาน</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;1.1 บทบาทผู้ใช้งาน</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;1.2 การ Login เข้าระบบ</span></div>
+  <div class="toc-item toc-chapter"><span>2. ผู้ดูแลระบบ (Admin / ครูกีฬาสี)</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;2.1 จัดการผู้ใช้งาน</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;2.2 เปิด-ปิดช่วงลงทะเบียน &amp; ซิงค์นักเรียน</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;2.3 ตั้งค่า Bracket &amp; จัดการตารางแข่ง</span></div>
+  <div class="toc-item toc-chapter"><span>3. ครูประจำสี (House Teacher)</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;3.1 อนุมัติทีม</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;3.2 ลงทะเบียนทีม</span></div>
+  <div class="toc-item toc-chapter"><span>4. ผู้ตัดสิน (Referee)</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.1 ตั้งค่ากีฬาที่รับผิดชอบ</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.2 บันทึกผลการแข่งขัน</span></div>
+  <div class="toc-item"><span>&nbsp;&nbsp;&nbsp;4.3 QR Scanner รายงานตัว</span></div>
+  <div class="toc-item toc-chapter"><span>5. หน้าสาธารณะ (ทุก role)</span></div>
+</div>
+
+<!-- CH1 -->
+<div class="chapter">
+  <div class="section-header">1. ภาพรวมและการเข้าใช้งาน</div>
+
+  <p>ระบบบริหารจัดการกีฬาสี 2569 ใช้สำหรับ <strong>ลงทะเบียนทีม อนุมัติทีม บันทึกผลการแข่งขัน
+  และติดตามคะแนนกีฬาสี</strong> ของโรงเรียนผดุงราษฎร์ เข้าใช้งานได้ที่<br>
+  <a href="https://prs-sportday.teachertan.workers.dev">https://prs-sportday.teachertan.workers.dev</a></p>
+
+  <h2>1.1 บทบาทผู้ใช้งาน</h2>
+  <table>
+    <tr><th>บทบาท</th><th>ชื่อในระบบ</th><th>สิทธิ์หลัก</th></tr>
+    <tr><td><span class="role-badge badge-admin">Admin</span></td><td>admin</td><td>เข้าถึงทุกส่วน จัดการ user ทั้งหมด</td></tr>
+    <tr><td><span class="role-badge badge-teacher">ครูกีฬาสี</span></td><td>teacher</td><td>เหมือน Admin แต่จัดการ user ไม่ได้</td></tr>
+    <tr><td><span class="role-badge badge-house">ครูประจำสี</span></td><td>house_teacher</td><td>อนุมัติทีมสีตัวเอง ลงทะเบียนทีมได้</td></tr>
+    <tr><td><span class="role-badge badge-referee">ผู้ตัดสิน</span></td><td>referee</td><td>บันทึกผลเฉพาะกีฬาที่รับผิดชอบ</td></tr>
+  </table>
+
+  <div class="note">
+    <strong>การกำหนด role อัตโนมัติ:</strong> เมื่อ login ครั้งแรก ระบบจะกำหนด role ให้อัตโนมัติ
+    — ครูที่มีห้องประจำชั้นจะได้ <strong>ครูประจำสี</strong> ตามสีห้องนั้น
+    ครูที่ไม่มีห้องประจำชั้นจะได้ <strong>ผู้ตัดสิน</strong>
+    Admin สามารถเปลี่ยน role ได้ที่เมนู ผู้ดูแลระบบ → จัดการผู้ใช้
+  </div>
+
+  <h2>1.2 การ Login เข้าระบบ</h2>
+  <div class="card">
+    <h3>Login ด้วยบัญชีระบบเช็คชื่อ</h3>
+    <p>ระบบกีฬาสีเชื่อมต่อกับระบบเช็คชื่อโรงเรียน — ใช้ <strong>username / password เดิม</strong>
+    จากระบบเช็คชื่อได้เลย ไม่ต้องสมัครใหม่</p>
+  </div>
+  <ol class="steps">
+    <li>เปิดเบราว์เซอร์ไปที่ <strong>prs-sportday.teachertan.workers.dev</strong></li>
+    <li>กรอก Username และ Password ของระบบเช็คชื่อ</li>
+    <li>กดปุ่ม <strong>"เข้าสู่ระบบ"</strong></li>
+    <li>ระบบพาไปยังหน้า Dashboard อัตโนมัติ</li>
+  </ol>
+  <div class="warn">
+    <strong>หากเข้าไม่ได้:</strong> ตรวจสอบว่า username/password ของระบบเช็คชื่อถูกต้อง
+    และบัญชีนั้นเปิดใช้งานอยู่
+  </div>
+</div>
+
+<!-- CH2 -->
+<div class="chapter">
+  <div class="section-header blue">2. ผู้ดูแลระบบ (Admin / ครูกีฬาสี)</div>
+  <p><span class="role-badge badge-admin">Admin</span> <span class="role-badge badge-teacher">ครูกีฬาสี</span></p>
+
+  <h2>2.1 จัดการผู้ใช้งาน</h2>
+  <p>คลิก <strong>"ผู้ดูแลระบบ"</strong> ในเมนู → กดปุ่ม <strong>"จัดการ →"</strong> ในส่วนจัดการผู้ใช้</p>
+  <ol class="steps">
+    <li>รายชื่อครูที่เคย login ผ่าน SSO จะปรากฏที่นี่</li>
+    <li>คลิก <strong>"แก้ไข"</strong> ข้างชื่อที่ต้องการ</li>
+    <li>เลือก <strong>บทบาท</strong> (teacher / house_teacher / referee / ...)</li>
+    <li>หากเป็น house_teacher — เลือก <strong>สีบ้าน</strong> ให้ถูกต้อง</li>
+    <li>หากเป็น referee — เลือก <strong>กีฬาที่รับผิดชอบ</strong></li>
+    <li>กด <strong>"บันทึก"</strong></li>
+  </ol>
+  <div class="note">
+    ครูที่ยังไม่ได้ login จะยังไม่ปรากฏในรายการ — ต้องให้ครู login อย่างน้อย 1 ครั้งก่อน
+  </div>
+
+  <h2>2.2 เปิด-ปิดช่วงลงทะเบียน &amp; ซิงค์นักเรียน</h2>
+  <div class="card">
+    <h3>เปิด-ปิดช่วงลงทะเบียน</h3>
+    <ul>
+      <li>ในหน้า Admin เลื่อนลงหาส่วน <strong>"ช่วงเวลาลงทะเบียน"</strong></li>
+      <li>กดปุ่ม <strong>"เปิดลงทะเบียน"</strong> พร้อมกำหนดวันเริ่ม-วันสิ้นสุด</li>
+      <li>ปิดโดยกด <strong>"ปิดลงทะเบียน"</strong></li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>ซิงค์รายชื่อนักเรียน</h3>
+    <ul>
+      <li>ดึงข้อมูลนักเรียน (ชื่อ, ห้อง, QR Code) จากระบบเช็คชื่อ</li>
+      <li>กดปุ่ม <strong>"ซิงค์ข้อมูลนักเรียน"</strong> รอจนขึ้น "ซิงค์สำเร็จ" (10–30 วินาที)</li>
+      <li>ควรซิงค์ใหม่ทุกครั้งที่มีการแก้ไขข้อมูลนักเรียนในระบบเช็คชื่อ</li>
+    </ul>
+  </div>
+
+  <h2>2.3 ตั้งค่า Bracket &amp; จัดการตารางแข่ง</h2>
+  <div class="card">
+    <h3>ตั้งค่า Bracket (สายการแข่งขัน)</h3>
+    <ul>
+      <li>คลิก <strong>"จัดการ Bracket →"</strong> → เลือกชนิดกีฬา</li>
+      <li>สำหรับแต่ละแมตช์ เลือก <strong>"แมตช์ถัดไป"</strong> และ <strong>"ช่อง A/B"</strong> ที่ผู้ชนะจะไป</li>
+      <li>กด <strong>"บันทึก"</strong> — ระบบจะเลื่อนทีมชนะให้อัตโนมัติหลังบันทึกผล</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>แก้ไขตารางแข่ง</h3>
+    <ul>
+      <li>คลิก <strong>"ตารางแข่ง / ผลการแข่ง"</strong> → กด <strong>"✏ แก้ไขตาราง"</strong> ในแมตช์ที่ต้องการ</li>
+      <li>แก้ไข วันที่ / สนาม / เลขที่แมตช์ / หมายเหตุ แล้วกด <strong>"บันทึก"</strong></li>
+    </ul>
+  </div>
+</div>
+
+<!-- CH3 -->
+<div class="chapter">
+  <div class="section-header green">3. ครูประจำสี (House Teacher)</div>
+  <p><span class="role-badge badge-house">ครูประจำสี</span></p>
+  <p>ครูประจำสีมีหน้าที่หลักคือ <strong>ดูแลการลงทะเบียนทีมและอนุมัติทีมในสีของตัวเอง</strong></p>
+
+  <h2>3.1 อนุมัติทีม</h2>
+  <ol class="steps">
+    <li>คลิก <strong>"ผู้ดูแลระบบ"</strong> ในเมนู</li>
+    <li>เลื่อนดูรายการทีมที่สถานะ <strong>"รออนุมัติ"</strong></li>
+    <li>คลิก <strong>"ดูรายชื่อ"</strong> เพื่อตรวจสอบรายชื่อนักเรียนในทีม</li>
+    <li>กด <strong>"อนุมัติ"</strong> หากถูกต้อง หรือ <strong>"ตีกลับ"</strong> พร้อมระบุเหตุผล</li>
+  </ol>
+  <div class="note">ครูประจำสีจะเห็นเฉพาะทีมในสีของตัวเองเท่านั้น</div>
+
+  <h2>3.2 ลงทะเบียนทีม</h2>
+  <ol class="steps">
+    <li>คลิก <strong>"ทีม / การลงทะเบียน"</strong> → เลื่อนลงหาส่วน <strong>"ลงทะเบียนทีมใหม่"</strong></li>
+    <li>เลือก <strong>ชนิดกีฬา</strong> ที่ต้องการ</li>
+    <li>สแกน QR Card นักเรียนหรือค้นหาชื่อเพื่อเพิ่มสมาชิก</li>
+    <li>กรอก <strong>ชื่อทีม</strong> (ถ้ามี) แล้วกด <strong>"ส่งลงทะเบียน"</strong></li>
+  </ol>
+  <div class="card">
+    <h3>สถานะทีม</h3>
+    <ul>
+      <li><strong>ฉบับร่าง</strong> — บันทึกไว้ยังไม่ส่ง</li>
+      <li><strong>รออนุมัติ</strong> — ส่งแล้ว รอครูประจำสีตรวจ</li>
+      <li><strong>อนุมัติแล้ว</strong> — พร้อมเข้าแข่งขัน</li>
+      <li><strong>ถูกตีกลับ</strong> — ต้องแก้ไขแล้วส่งใหม่</li>
+    </ul>
+  </div>
+</div>
+
+<!-- CH4 -->
+<div class="chapter">
+  <div class="section-header amber">4. ผู้ตัดสิน (Referee)</div>
+  <p><span class="role-badge badge-referee">ผู้ตัดสิน</span></p>
+  <p>ผู้ตัดสินมีหน้าที่ <strong>บันทึกผลการแข่งขันและจัดการการรายงานตัวของทีม</strong>
+  เฉพาะกีฬาที่รับผิดชอบ</p>
+
+  <h2>4.1 ตั้งค่ากีฬาที่รับผิดชอบ</h2>
+  <ol class="steps">
+    <li>คลิก <strong>"กีฬาของฉัน"</strong> ในเมนูด้านบน</li>
+    <li>เลือก checkbox กีฬาที่ตัวเองเป็นผู้ตัดสิน (เลือกได้หลายรายการ)</li>
+    <li>กด <strong>"บันทึก"</strong></li>
+  </ol>
+  <div class="note">
+    Admin สามารถกำหนดกีฬาให้ผู้ตัดสินได้จาก Admin → จัดการผู้ใช้ ด้วยเช่นกัน
+  </div>
+
+  <h2>4.2 บันทึกผลการแข่งขัน</h2>
+  <ol class="steps">
+    <li>คลิก <strong>"ตารางแข่ง / ผลการแข่ง"</strong> — จะเห็นเฉพาะกีฬาที่รับผิดชอบ</li>
+    <li>กดปุ่ม <strong>"รายงานตัว / บันทึกผล"</strong> ในแมตช์ที่ต้องการ</li>
+    <li><strong>รายงานตัว:</strong> กดปุ่ม ✓ ข้างชื่อทีมเพื่อยืนยันว่าทีมมาแล้ว</li>
+    <li>เปลี่ยนสถานะเป็น <strong>"กำลังแข่ง"</strong> เมื่อเริ่มแมตช์</li>
+    <li>กรอก <strong>คะแนนทีม A</strong> และ <strong>คะแนนทีม B</strong></li>
+    <li>เปลี่ยนสถานะเป็น <strong>"จบแล้ว"</strong> แล้วกด <strong>"บันทึก"</strong></li>
+  </ol>
+  <div class="card">
+    <h3>Walkover (ทีมไม่มาแข่ง)</h3>
+    <p>หากทีมใดทีมหนึ่งไม่มารายงานตัว กดปุ่ม <strong>"Walkover"</strong>
+    ให้อีกทีมชนะโดยปริยาย ระบบตั้งคะแนนเป็น 3-0 อัตโนมัติ</p>
+  </div>
+
+  <h2>4.3 QR Scanner รายงานตัว</h2>
+  <ol class="steps">
+    <li>ในหน้าบันทึกผล กดปุ่ม <strong>"สแกน QR รายงานตัว"</strong></li>
+    <li>หน้า Scanner จะเปิดขึ้น — ยิงกล้องไปที่ QR Card นักเรียน</li>
+    <li>ระบบตรวจสอบและบันทึกการรายงานตัวให้อัตโนมัติ</li>
+    <li>กด <strong>"ย้อนกลับ"</strong> เมื่อเสร็จสิ้น</li>
+  </ol>
+  <div class="warn">
+    ต้องเข้าผ่านเบราว์เซอร์บนมือถือและอนุญาตให้ใช้กล้องเพื่อสแกน QR ได้
+  </div>
+</div>
+
+<!-- CH5 -->
+<div class="chapter">
+  <div class="section-header indigo">5. หน้าสาธารณะ (ดูได้ทุก role)</div>
+  <p><span class="role-badge badge-all">ทุก role</span></p>
+
+  <h2>ตารางแข่ง / ผลการแข่ง</h2>
+  <div class="card">
+    <h3>การกรองข้อมูล</h3>
+    <ul>
+      <li><strong>📅 วันที่</strong> — กรองเฉพาะวันที่เลือก</li>
+      <li><strong>🏅 ชนิดกีฬา</strong> — กรองเฉพาะกีฬาที่เลือก</li>
+      <li><strong>🔄 รอบ</strong> — รอบคัดเลือก / รอบชิง</li>
+      <li><strong>📋 สถานะ</strong> — รอแข่ง / กำลังแข่ง / จบแล้ว</li>
+    </ul>
+  </div>
+
+  <h2>สรุปผลรายวัน</h2>
+  <p>คลิก <strong>"สรุปผลรายวัน"</strong> ในเมนู — แสดงผลการแข่งขันทั้งหมดของวันนั้น
+  จัดกลุ่มตามชนิดกีฬา พร้อม Scoreboard คะแนนรวมแต่ละสี</p>
+
+  <h2>หน้า Dashboard</h2>
+  <p>หน้าแรกหลัง login แสดงภาพรวม: คะแนนรวมของแต่ละบ้านสี จำนวนแมตช์วันนี้ และทีมที่ได้รับการอนุมัติแล้ว</p>
+</div>
+
+<footer>
+  คู่มือการใช้งานระบบกีฬาสี 2569 — โรงเรียนผดุงราษฎร์<br>
+  prs-sportday.teachertan.workers.dev
+</footer>
+
+</div>
+</body>
+</html>

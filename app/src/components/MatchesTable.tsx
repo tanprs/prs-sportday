@@ -99,7 +99,7 @@ export function MatchesTable({
   return (
     <div className="space-y-3">
       {/* ─ filter bar ─ */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
         {/* วันที่ */}
         <select
           value={filterDate}
@@ -151,19 +151,98 @@ export function MatchesTable({
         {hasFilter && (
           <button
             onClick={clearFilters}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-500 hover:bg-slate-50"
+            className="col-span-2 sm:col-span-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-500 hover:bg-slate-50"
           >
             ✕ ล้างตัวกรอง
           </button>
         )}
 
-        <span className="ml-auto text-xs text-slate-400">
+        <span className="col-span-2 sm:col-span-1 sm:ml-auto text-xs text-slate-400">
           {filtered.length} / {matches.length} แมตช์
         </span>
       </div>
 
-      {/* ─ table ─ */}
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      {/* ─ mobile card view ─ */}
+      <div className="md:hidden space-y-2">
+        {filtered.length > 0 ? (
+          filtered.map((m) => {
+            const editable =
+              m.status !== "completed" &&
+              m.status !== "cancelled" &&
+              (canEditAny || (isReferee && assignedSports.includes(m.sport_id)));
+            const teamA = m.team_a_id ? teamLabel[m.team_a_id] : "-";
+            const teamB = m.team_b_id ? teamLabel[m.team_b_id] : "-";
+
+            return (
+              <div key={m.id} className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+                {/* header row */}
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{sportLabel[m.sport_id] ?? "-"}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {ROUND_LABELS[m.round] ?? m.round}
+                      {m.match_no ? ` · ${m.match_no}` : ""}
+                      {m.match_date ? ` · ${m.match_date}` : ""}
+                      {m.venue ? ` · ${m.venue}` : ""}
+                    </p>
+                  </div>
+                  {m.status && (
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[m.status] ?? "bg-slate-100"}`}>
+                      {STATUS_LABELS[m.status]}
+                    </span>
+                  )}
+                </div>
+
+                {/* score row */}
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 text-center text-sm font-medium text-slate-700 truncate">{teamA}</span>
+                  <span className="shrink-0 font-mono text-lg font-bold text-slate-900 px-2">
+                    {m.score_a ?? 0} - {m.score_b ?? 0}
+                  </span>
+                  <span className="flex-1 text-center text-sm font-medium text-slate-700 truncate">{teamB}</span>
+                </div>
+
+                {/* actions */}
+                {(showActions && editable) && (
+                  <div className="border-t border-slate-100 pt-3">
+                    <MatchScoreEntry
+                      matchId={m.id}
+                      initialScoreA={m.score_a}
+                      initialScoreB={m.score_b}
+                      initialStatus={m.status as "scheduled" | "ongoing" | "completed" | "cancelled"}
+                      teamAId={m.team_a_id}
+                      teamBId={m.team_b_id}
+                      teamAName={m.team_a_id ? teamLabel[m.team_a_id] : undefined}
+                      teamBName={m.team_b_id ? teamLabel[m.team_b_id] : undefined}
+                      initialCheckedInA={m.team_a_checked_in}
+                      initialCheckedInB={m.team_b_checked_in}
+                    />
+                  </div>
+                )}
+                {canEditAny && (
+                  <div className={showActions && editable ? "" : "border-t border-slate-100 pt-3"}>
+                    <MatchScheduleEdit
+                      matchId={m.id}
+                      initialDate={m.match_date ?? null}
+                      initialVenue={m.venue ?? null}
+                      initialNotes={m.notes ?? null}
+                      initialMatchNo={m.match_no ?? null}
+                      sportLabel={sportLabel[m.sport_id] ?? ""}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-slate-400 text-sm">
+            {hasFilter ? "ไม่มีแมตช์ที่ตรงกับตัวกรองที่เลือก" : "ยังไม่มีตารางแข่งในระบบ"}
+          </div>
+        )}
+      </div>
+
+      {/* ─ desktop table ─ */}
+      <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200 bg-white">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs text-slate-500">
             <tr>

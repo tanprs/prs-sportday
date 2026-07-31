@@ -2,27 +2,29 @@ import { redirect } from "next/navigation";
 import { getCurrentProfile, ROLE_LABELS_TH } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { RefereeProfilePanel } from "@/components/RefereeProfilePanel";
+import { ChangePasswordPanel } from "@/components/ChangePasswordPanel";
 
 export default async function ProfilePage() {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/login");
 
-  // หน้านี้ใช้ได้เฉพาะ referee
-  if (profile.role !== "referee") redirect("/dashboard");
-
   const supabase = await createClient();
+  const isReferee = profile.role === "referee";
 
-  const { data: sports } = await supabase
-    .from("sport_types")
-    .select("id, name, grade_group, gender_type")
-    .order("name")
-    .order("grade_group");
-
-  const sportOptions = (sports ?? []).map((s) => {
-    const gender =
-      s.gender_type === "male" ? " (ชาย)" : s.gender_type === "female" ? " (หญิง)" : "";
-    return { id: s.id, label: `${s.name} ${s.grade_group}${gender}` };
-  });
+  const sportOptions = isReferee
+    ? await (async () => {
+        const { data: sports } = await supabase
+          .from("sport_types")
+          .select("id, name, grade_group, gender_type")
+          .order("name")
+          .order("grade_group");
+        return (sports ?? []).map((s) => {
+          const gender =
+            s.gender_type === "male" ? " (ชาย)" : s.gender_type === "female" ? " (หญิง)" : "";
+          return { id: s.id, label: `${s.name} ${s.grade_group}${gender}` };
+        });
+      })()
+    : [];
 
   const currentSports = (profile.assigned_sports as string[] | null) ?? [];
 
@@ -30,10 +32,7 @@ export default async function ProfilePage() {
     <div className="max-w-xl space-y-6">
       {/* header */}
       <div>
-        <h1 className="text-xl font-semibold text-slate-900">กีฬาที่ฉันรับผิดชอบ</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          เลือกชนิดกีฬาที่คุณเป็นผู้ตัดสิน — จะปรากฏในหน้าตารางแข่งเพื่อบันทึกผลได้
-        </p>
+        <h1 className="text-xl font-semibold text-slate-900">โปรไฟล์</h1>
       </div>
 
       {/* profile card */}
@@ -47,8 +46,21 @@ export default async function ProfilePage() {
         </div>
       </div>
 
-      {/* sport picker */}
-      <RefereeProfilePanel currentSports={currentSports} sports={sportOptions} />
+      {/* เปลี่ยนรหัสผ่าน (ทุก role) */}
+      <ChangePasswordPanel />
+
+      {/* sport picker — referee เท่านั้น */}
+      {isReferee && (
+        <>
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">กีฬาที่ฉันรับผิดชอบ</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              เลือกชนิดกีฬาที่คุณเป็นผู้ตัดสิน — จะปรากฏในหน้าตารางแข่งเพื่อบันทึกผลได้
+            </p>
+          </div>
+          <RefereeProfilePanel currentSports={currentSports} sports={sportOptions} />
+        </>
+      )}
     </div>
   );
 }

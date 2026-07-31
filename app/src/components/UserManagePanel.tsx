@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ROLE_LABELS_TH, HOUSE_LABELS_TH } from "@/lib/labels";
+import { adminResetPassword } from "@/lib/actions/password";
 
 type UserRow = {
   id: string;
@@ -49,6 +50,12 @@ export function UserManagePanel({ users, sports, currentUserId }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
 
+  // password reset state
+  const [pwInput, setPwInput] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwSaved, setPwSaved] = useState(false);
+
   function openEdit(u: UserRow) {
     setEditing(u.id);
     setDraft({
@@ -60,6 +67,20 @@ export function UserManagePanel({ users, sports, currentUserId }: Props) {
     });
     setError(null);
     setSaved(null);
+    setPwInput("");
+    setPwError(null);
+    setPwSaved(false);
+  }
+
+  async function handleResetPassword(userId: string) {
+    if (!pwInput) { setPwError("กรุณากรอกรหัสผ่าน"); return; }
+    setPwSaving(true); setPwError(null); setPwSaved(false);
+    const { error } = await adminResetPassword(userId, pwInput);
+    setPwSaving(false);
+    if (error) { setPwError(error); return; }
+    setPwInput("");
+    setPwSaved(true);
+    setTimeout(() => setPwSaved(false), 3000);
   }
 
   function toggleSport(sportId: string) {
@@ -246,6 +267,29 @@ export function UserManagePanel({ users, sports, currentUserId }: Props) {
                   >
                     ยกเลิก
                   </button>
+                </div>
+
+                {/* ── รีเซ็ตรหัสผ่าน ── */}
+                <div className="border-t border-slate-200 pt-4 mt-2">
+                  <p className="mb-2 text-xs font-medium text-slate-500">🔑 รีเซ็ตรหัสผ่าน (สำหรับ login โดยตรง)</p>
+                  <div className="flex gap-2 items-start">
+                    <input
+                      type="password"
+                      value={pwInput}
+                      onChange={(e) => { setPwInput(e.target.value); setPwError(null); setPwSaved(false); }}
+                      placeholder="รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)"
+                      className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                    />
+                    <button
+                      onClick={() => handleResetPassword(u.id)}
+                      disabled={pwSaving || !pwInput}
+                      className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-40 whitespace-nowrap"
+                    >
+                      {pwSaving ? "กำลังตั้ง…" : "ตั้งรหัสผ่าน"}
+                    </button>
+                  </div>
+                  {pwError && <p className="mt-1 text-xs text-red-600">{pwError}</p>}
+                  {pwSaved && <p className="mt-1 text-xs text-emerald-600">✓ ตั้งรหัสผ่านเรียบร้อย</p>}
                 </div>
               </div>
             )}
