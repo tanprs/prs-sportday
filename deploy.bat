@@ -4,12 +4,12 @@ start "Deploy PRS Sportday" cmd /k "%~f0" run
 exit
 
 :run
-cd /d "%~dp0"
+cd /d "%~dp0."
 echo Pushing to GitHub...
 call git push origin main
 if %errorlevel% neq 0 (
   echo.
-  echo *** Git push failed! ***
+  echo Git push failed - exit code %errorlevel%
   pause
   exit /b 1
 )
@@ -19,7 +19,7 @@ echo Building...
 call npm run build
 if %errorlevel% neq 0 (
   echo.
-  echo *** Build failed! (exit code %errorlevel%) ***
+  echo Build failed - exit code %errorlevel%
   pause
   exit /b 1
 )
